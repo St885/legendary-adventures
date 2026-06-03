@@ -15,6 +15,7 @@ import { overlaps } from './collision.js';
 import { emitGem, emitDeath, emitDoorOpen, emitChest, updateParticles, drawParticles, resetParticles } from './particles.js';
 import { initAudio, playGem, playSword, playHurt, playEnemyDeath, playEnemyShoot, playDoorOpen, playHeal, playNpc, playChestOpen, playBowShoot, playStaffShoot, startAmbient, stopAmbient } from './audio.js';
 import { chestH2, chestH3 } from './chest.js';
+import { initTouch } from './touch.js';
 
 const weaponPickups = { sword: swordPickup, bow: bowPickup, staff: staffPickup };
 
@@ -62,6 +63,7 @@ canvas.width = CANVAS_W;
 canvas.height = CANVAS_H;
 ctx.imageSmoothingEnabled = false;
 
+initTouch(canvas);
 initInput();
 player.reset();
 
@@ -99,7 +101,7 @@ function handleReset() {
 
 function update(dt) {
     if (game.state === 'START') {
-        if (isPressed('Enter')) handleReset();
+        if (isPressed('Enter') || isPressed('KeyR')) handleReset();
         clearPressed();
         return;
     }

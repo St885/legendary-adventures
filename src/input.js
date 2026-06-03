@@ -30,3 +30,13 @@ export function clearPressed() {
         delete keysPressed[key];
     }
 }
+
+// Used by touch controls to simulate keyboard input
+export function virtualKeyDown(code) {
+    if (!keys[code]) keysPressed[code] = true;
+    keys[code] = true;
+}
+
+export function virtualKeyUp(code) {
+    keys[code] = false;
+}

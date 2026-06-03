@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Legendary Adventures</title>
     <style>
         * {
@@ -10,17 +10,27 @@
             padding: 0;
             box-sizing: border-box;
         }
+        html {
+            height: 100%;
+        }
         body {
             background: #0d0d0d;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
         canvas {
             display: block;
             border: 2px solid #2a2a3a;
             image-rendering: pixelated;
+            max-width: 100%;
+            max-height: 100%;
+            touch-action: none;
         }
     </style>
 </head>

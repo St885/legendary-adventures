@@ -7,7 +7,7 @@
 | **Nombre** | Legendary Adventures |
 | **Género** | Aventura top-down 2D |
 | **Stack** | HTML5 Canvas + JavaScript ES6+ + CSS3 |
-| **Estado** | ✅ Publicado en GitHub Pages — v1.3 · Local en v1.4 (pendiente de push) |
+| **Estado** | ✅ Publicado en GitHub Pages — v1.4 · Local en v1.5 (pendiente de push) |
 | **Carpeta** | `03_juegos/legendary-adventures/` |
 | **GitHub Pages** | https://st885.github.io/legendary-adventures/ |
 
@@ -103,7 +103,8 @@ npx serve .
 | Fase 6 — Sonido, pausa y experiencia final (audio.js, P-key, WIN/DEAD con estadísticas) | ✅ Completa |
 | Fase 7 — Pantalla WIN mejorada (mensajes de rendimiento, bonus NPC, v1.2) | ✅ Completa |
 | Fase 8 — Sistema de armas: arco, bastón, proyectiles, drop de arma (v1.3) | ✅ Completa |
-| Fase 9 — Música procedural, 10 enemigos dinámicos, 3 ranged con proyectiles (v1.4) | ✅ Completa (local) |
+| Fase 9 — Música procedural, 10 enemigos dinámicos, 3 ranged con proyectiles (v1.4) | ✅ Completa |
+| Fase 10 — Mobile web: touch.js, D-pad joystick, canvas responsive, overlay portrait (v1.5) | ✅ Completa (local) |
 
 ### Notas técnicas v1.4
 - `src/audio.js` → melodía pentatónica en loop (triangle wave, 8 notas, 500ms/nota); `_scheduleNote` + `_melodyGain`; `playEnemyShoot()`

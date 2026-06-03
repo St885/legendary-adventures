@@ -89,7 +89,7 @@ export function drawStart(ctx) {
     // Version
     ctx.fillStyle = 'rgba(100,130,160,0.45)';
     ctx.font      = '11px monospace';
-    ctx.fillText('v1.4 · Legendary Adventures', CANVAS_W / 2, 578);
+    ctx.fillText('v1.5 · Legendary Adventures', CANVAS_W / 2, 578);
 
     ctx.textAlign = 'left';
 }
@@ -252,7 +252,7 @@ export function drawWin(ctx, stats = {}, t = 0) {
     // Footer
     ctx.fillStyle = 'rgba(200,200,200,0.35)';
     ctx.font      = '12px monospace';
-    ctx.fillText('v1.4 · Legendary Adventures', CANVAS_W / 2, Math.max(572, ctaY + 28));
+    ctx.fillText('v1.5 · Legendary Adventures', CANVAS_W / 2, Math.max(572, ctaY + 28));
 
     ctx.textAlign = 'left';
 }
@@ -332,7 +332,7 @@ export function drawDead(ctx, stats = {}) {
     // Footer
     ctx.fillStyle = 'rgba(200,200,200,0.35)';
     ctx.font      = '12px monospace';
-    ctx.fillText('v1.4 · Legendary Adventures', CANVAS_W / 2, 572);
+    ctx.fillText('v1.5 · Legendary Adventures', CANVAS_W / 2, 572);
 
     ctx.textAlign = 'left';
 }
