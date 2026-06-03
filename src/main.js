@@ -7,10 +7,52 @@ import { crystals, resetCrystals } from './crystal.js';
 import { drawHUD } from './hud.js';
 import { door } from './door.js';
 import { ENEMIES } from './enemy.js';
-import { swordPickup, shieldPickup } from './pickup.js';
+import { swordPickup, bowPickup, staffPickup, shieldPickup, heartPickup } from './pickup.js';
+import { fireProjectile, getProjectiles, updateProjectiles, drawProjectiles, resetProjectiles } from './projectile.js';
+import { npc } from './npc.js';
 import { overlaps } from './collision.js';
-import { emitGem, emitDeath, emitDoorOpen, updateParticles, drawParticles, resetParticles } from './particles.js';
-import { initAudio, playGem, playSword, playHurt, playEnemyDeath, playDoorOpen, startAmbient, stopAmbient } from './audio.js';
+import { emitGem, emitDeath, emitDoorOpen, emitChest, updateParticles, drawParticles, resetParticles } from './particles.js';
+import { initAudio, playGem, playSword, playHurt, playEnemyDeath, playDoorOpen, playHeal, playNpc, playChestOpen, playBowShoot, playStaffShoot, startAmbient, stopAmbient } from './audio.js';
+import { chestH2, chestH3 } from './chest.js';
+
+const weaponPickups = { sword: swordPickup, bow: bowPickup, staff: staffPickup };
+
+function facingToDir(facing) {
+    switch (facing) {
+        case 'right': return {  x: 1, y:  0 };
+        case 'left':  return {  x:-1, y:  0 };
+        case 'up':    return {  x: 0, y: -1 };
+        default:      return {  x: 0, y:  1 };
+    }
+}
+
+function getDropPos(player, obstacles) {
+    const OFFSET = 32, MARGIN = 24;
+    const cx = player.x + player.w / 2;
+    const cy = player.y + player.h / 2;
+    const primary = {
+        right: { x: -OFFSET, y:       0 },
+        left:  { x:  OFFSET, y:       0 },
+        up:    { x:       0, y:  OFFSET },
+        down:  { x:       0, y: -OFFSET },
+    }[player.facing] || { x: -OFFSET, y: 0 };
+    const candidates = [
+        primary,
+        { x:  primary.y, y: -primary.x },
+        { x: -primary.y, y:  primary.x },
+        { x: 0,          y:           0 },
+    ];
+    for (const d of candidates) {
+        const px  = Math.max(MARGIN, Math.min(CANVAS_W - MARGIN, cx + d.x));
+        const py  = Math.max(MARGIN, Math.min(CANVAS_H - MARGIN, cy + d.y));
+        const box = { x: px - 12, y: py - 12, w: 24, h: 24 };
+        if (!obstacles.some(obs => overlaps(box, obs))) return { x: px, y: py };
+    }
+    return {
+        x: Math.max(MARGIN, Math.min(CANVAS_W - MARGIN, cx)),
+        y: Math.max(MARGIN, Math.min(CANVAS_H - MARGIN, cy)),
+    };
+}
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -27,17 +69,26 @@ let lastTime = 0;
 let roomNameTimer = 0;
 let doorWasOpen = false;
 let paused = false;
+let winTimer = 0;
 
 function handleReset() {
     resetGame();
     player.reset();
     for (const enemy of ENEMIES) enemy.reset();
     swordPickup.reset();
+    bowPickup.reset();
+    staffPickup.reset();
     shieldPickup.reset();
+    heartPickup.reset();
+    npc.reset();
     resetCrystals();
     resetParticles();
+    resetProjectiles();
+    chestH2.reset();
+    chestH3.reset();
     doorWasOpen = false;
     paused = false;
+    winTimer = 0;
     stopAmbient();
     initAudio();
     startAmbient();
@@ -90,8 +141,20 @@ function update(dt) {
 
     if (game.state === 'PLAYING') {
         if (isPressed('Space')) {
-            if (player.hasSword && player.attackCooldown <= 0) playSword();
-            player.tryAttack();
+            if (player.weapon === 'sword') {
+                if (player.attackCooldown <= 0) playSword();
+                player.tryAttack();
+            } else if (player.weapon === 'bow' && player.attackCooldown <= 0) {
+                const d = facingToDir(player.facing);
+                fireProjectile('arrow', player.x + player.w / 2, player.y + player.h / 2, d.x, d.y);
+                playBowShoot();
+                player.attackCooldown = 0.4;
+            } else if (player.weapon === 'staff' && player.attackCooldown <= 0) {
+                const d = facingToDir(player.facing);
+                fireProjectile('bolt', player.x + player.w / 2, player.y + player.h / 2, d.x, d.y);
+                playStaffShoot();
+                player.attackCooldown = 0.7;
+            }
         }
 
         const room = ROOMS[game.currentRoom];
@@ -105,6 +168,24 @@ function update(dt) {
         const roomEnemies = ENEMIES.filter(e => e.room === game.currentRoom);
 
         for (const enemy of roomEnemies) enemy.update(dt, room.obstacles);
+
+        updateProjectiles(dt, obstacles);
+
+        // Projectiles hit enemies
+        for (const proj of getProjectiles()) {
+            for (const enemy of roomEnemies) {
+                if (enemy.alive && overlaps(proj, enemy)) {
+                    proj.alive = false;
+                    enemy.takeDamage(proj.damage);
+                    if (!enemy.alive) {
+                        emitDeath(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
+                        playEnemyDeath();
+                        game.enemiesKilled++;
+                    }
+                    break;
+                }
+            }
+        }
 
         // Sword hits enemies
         if (player.attacking && player.hasSword) {
@@ -137,12 +218,61 @@ function update(dt) {
             return;
         }
 
-        // Pickups
-        if (swordPickup.room === game.currentRoom && swordPickup.checkPickup(player)) {
-            player.hasSword = true;
+        // Weapon drop cooldown timers
+        if (swordPickup.dropCooldown > 0) swordPickup.dropCooldown -= dt;
+        if (bowPickup.dropCooldown   > 0) bowPickup.dropCooldown   -= dt;
+        if (staffPickup.dropCooldown > 0) staffPickup.dropCooldown -= dt;
+
+        // Weapon pickups — one active weapon; previous drops near Oliver on swap
+        if (swordPickup.room === game.currentRoom && !swordPickup.collected && swordPickup.dropCooldown <= 0 && player.weapon !== 'sword' && overlaps(player, swordPickup.aabb)) {
+            if (player.weapon !== null) {
+                const pos = getDropPos(player, obstacles);
+                weaponPickups[player.weapon].dropAt(pos.x, pos.y, game.currentRoom);
+            }
+            swordPickup.collected = true;
+            player.weapon = 'sword';
         }
+        if (bowPickup.room === game.currentRoom && !bowPickup.collected && bowPickup.dropCooldown <= 0 && player.weapon !== 'bow' && overlaps(player, bowPickup.aabb)) {
+            if (player.weapon !== null) {
+                const pos = getDropPos(player, obstacles);
+                weaponPickups[player.weapon].dropAt(pos.x, pos.y, game.currentRoom);
+            }
+            bowPickup.collected = true;
+            player.weapon = 'bow';
+        }
+        if (staffPickup.room === game.currentRoom && !staffPickup.collected && staffPickup.dropCooldown <= 0 && player.weapon !== 'staff' && overlaps(player, staffPickup.aabb)) {
+            if (player.weapon !== null) {
+                const pos = getDropPos(player, obstacles);
+                weaponPickups[player.weapon].dropAt(pos.x, pos.y, game.currentRoom);
+            }
+            staffPickup.collected = true;
+            player.weapon = 'staff';
+        }
+
+        // Shield
         if (shieldPickup.room === game.currentRoom && shieldPickup.checkPickup(player)) {
             player.hasShield = true;
+        }
+        if (heartPickup.room === game.currentRoom && player.hp < player.maxHp && heartPickup.checkPickup(player)) {
+            player.heal(1);
+            playHeal();
+        }
+
+        // Chests
+        if (chestH2.room === game.currentRoom && chestH2.checkOpen(player)) {
+            emitChest(chestH2.cx, chestH2.cy - 12, '#ffb0b0');
+            playChestOpen();
+            if (player.hp < player.maxHp) player.heal(1);
+        }
+        if (chestH3.room === game.currentRoom && chestH3.checkOpen(player)) {
+            emitChest(chestH3.cx, chestH3.cy - 12, '#FFD700');
+            playChestOpen();
+        }
+
+        // NPC chime — once per run on first proximity
+        if (npc.room === game.currentRoom && !npc._chimed && npc.isNear(player)) {
+            npc._chimed = true;
+            playNpc();
         }
 
         // Crystals
@@ -158,9 +288,14 @@ function update(dt) {
                 playDoorOpen();
             }
             door.checkVictory(player);
-            if (game.state === 'WIN') stopAmbient();
+            if (game.state === 'WIN') {
+                stopAmbient();
+                winTimer = 0;
+            }
         }
     }
+
+    if (game.state === 'WIN') winTimer += dt;
 
     clearPressed();
 }
@@ -177,7 +312,17 @@ function render() {
 
     // Pickups
     if (swordPickup.room  === game.currentRoom) swordPickup.draw(ctx);
+    if (bowPickup.room    === game.currentRoom) bowPickup.draw(ctx);
+    if (staffPickup.room  === game.currentRoom) staffPickup.draw(ctx);
     if (shieldPickup.room === game.currentRoom) shieldPickup.draw(ctx);
+    if (heartPickup.room  === game.currentRoom) heartPickup.draw(ctx, player.hp < player.maxHp);
+
+    // Chests
+    if (chestH2.room === game.currentRoom) chestH2.draw(ctx);
+    if (chestH3.room === game.currentRoom) chestH3.draw(ctx);
+
+    // NPC
+    if (npc.room === game.currentRoom) npc.draw(ctx);
 
     // Crystals
     for (const c of crystals) {
@@ -192,12 +337,16 @@ function render() {
         if (enemy.room === game.currentRoom) enemy.draw(ctx);
     }
 
+    drawProjectiles(ctx);
+
     // Player (sword drawn first so it appears behind Oliver's body)
     player.drawSword(ctx);
     player.draw(ctx);
 
     drawParticles(ctx);
-    drawHUD(ctx);
+    if (npc.room === game.currentRoom && npc.isNear(player)) npc.drawDialog(ctx);
+    const chestsOpened = (chestH2.open ? 1 : 0) + (chestH3.open ? 1 : 0);
+    drawHUD(ctx, { chestsOpened });
 
     if (roomNameTimer > 0) {
         const alpha = Math.min(1, roomNameTimer / 0.6);
@@ -230,7 +379,7 @@ function render() {
         ctx.textAlign = 'left';
     }
 
-    if (game.state === 'WIN')  drawWin(ctx,  { hp: player.hp, maxHp: player.maxHp, kills: game.enemiesKilled, crystals: game.crystalsCollected });
+    if (game.state === 'WIN')  drawWin(ctx,  { hp: player.hp, maxHp: player.maxHp, kills: game.enemiesKilled, crystals: game.crystalsCollected, talked: npc._chimed, chestsOpened }, winTimer);
     if (game.state === 'DEAD') drawDead(ctx, { kills: game.enemiesKilled, crystals: game.crystalsCollected });
 
     if (game.fadeAlpha > 0) {

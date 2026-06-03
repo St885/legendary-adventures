@@ -5,13 +5,15 @@ const HITBOX = 16;
 function makePickup(id, room, cx, cy) {
     return {
         id, room, cx, cy,
+        _origCx: cx, _origCy: cy, _origRoom: room,
         collected: false,
+        dropCooldown: 0,
 
         get aabb() {
             return { x: this.cx - HITBOX, y: this.cy - HITBOX, w: HITBOX * 2, h: HITBOX * 2 };
         },
 
-        draw(ctx) {
+        draw(ctx, available = true) {
             if (this.collected) return;
             const t = performance.now() / 1000;
             const pulse = 0.5 + Math.sin(t * 2.2) * 0.4;
@@ -98,6 +100,112 @@ function makePickup(id, room, cx, cy) {
                 ctx.fillRect(this.cx - 2, this.cy - 4, 4, 4);
                 ctx.fillStyle = 'rgba(255,255,255,0.6)';
                 ctx.fillRect(this.cx - 1, this.cy - 4, 2, 2);
+
+            } else if (this.id === 'bow') {
+                ctx.strokeStyle = `rgba(200,120,40,${0.2 + pulse * 0.3})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.cx, this.cy, 16 + pulse * 4, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.strokeStyle = `rgba(200,120,40,${0.08 + pulse * 0.12})`;
+                ctx.beginPath();
+                ctx.arc(this.cx, this.cy, 23 + pulse * 3, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+
+                ctx.shadowColor = '#c87030';
+                ctx.shadowBlur  = 6 + pulse * 6;
+
+                const bcx = this.cx, bcy = this.cy;
+                ctx.strokeStyle = '#7a3a10';
+                ctx.lineWidth   = 3;
+                ctx.beginPath();
+                ctx.moveTo(bcx - 4, bcy - 12);
+                ctx.quadraticCurveTo(bcx + 10, bcy, bcx - 4, bcy + 12);
+                ctx.stroke();
+                ctx.strokeStyle = '#e8d8a0';
+                ctx.lineWidth   = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(bcx - 4, bcy - 12);
+                ctx.lineTo(bcx - 4, bcy + 12);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+                ctx.fillStyle = '#c8a040';
+                ctx.fillRect(bcx - 16, bcy - 1, 18, 2);
+                ctx.fillStyle = '#e8e8c0';
+                ctx.fillRect(bcx +  2, bcy - 2,  4, 4);
+                ctx.fillStyle = '#888860';
+                ctx.fillRect(bcx - 16, bcy - 3,  4, 6);
+                ctx.shadowBlur = 0;
+
+            } else if (this.id === 'staff') {
+                ctx.strokeStyle = `rgba(160,80,255,${0.2 + pulse * 0.3})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.cx, this.cy, 16 + pulse * 4, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.strokeStyle = `rgba(160,80,255,${0.08 + pulse * 0.12})`;
+                ctx.beginPath();
+                ctx.arc(this.cx, this.cy, 23 + pulse * 3, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+
+                ctx.shadowColor = '#a060ff';
+                ctx.shadowBlur  = 8 + pulse * 8;
+
+                const scx = this.cx, scy = this.cy;
+                ctx.fillStyle = '#8b6914';
+                ctx.fillRect(scx - 2, scy - 14, 4, 28);
+                ctx.fillStyle = '#a060ff';
+                ctx.beginPath();
+                ctx.arc(scx, scy - 14, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,0.65)';
+                ctx.beginPath();
+                ctx.arc(scx - 2, scy - 16, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+            } else if (this.id === 'heart') {
+                if (available) {
+                    ctx.strokeStyle = `rgba(232,48,48,${0.2 + pulse * 0.3})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(this.cx, this.cy, 16 + pulse * 4, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.strokeStyle = `rgba(232,48,48,${0.08 + pulse * 0.12})`;
+                    ctx.beginPath();
+                    ctx.arc(this.cx, this.cy, 23 + pulse * 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.lineWidth = 1;
+
+                    ctx.shadowColor = '#e83030';
+                    ctx.shadowBlur = 6 + pulse * 6;
+                    ctx.save();
+                    ctx.translate(this.cx, this.cy);
+                    ctx.rotate(Math.PI / 4);
+                    ctx.fillStyle = '#e83030';
+                    ctx.fillRect(-8, -8, 16, 16);
+                    ctx.fillStyle = 'rgba(255,180,180,0.45)';
+                    ctx.fillRect(-2, -8, 4, 8);
+                    ctx.restore();
+                    ctx.shadowBlur = 0;
+                } else {
+                    ctx.strokeStyle = 'rgba(160,160,160,0.18)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(this.cx, this.cy, 16, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.lineWidth = 1;
+                    ctx.save();
+                    ctx.translate(this.cx, this.cy);
+                    ctx.rotate(Math.PI / 4);
+                    ctx.strokeStyle = 'rgba(180,100,100,0.35)';
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(-8, -8, 16, 16);
+                    ctx.lineWidth = 1;
+                    ctx.restore();
+                }
             }
         },
 
@@ -110,13 +218,31 @@ function makePickup(id, room, cx, cy) {
             return false;
         },
 
+        dropAt(x, y, room) {
+            this.cx           = x;
+            this.cy           = y;
+            this.room         = room;
+            this.collected    = false;
+            this.dropCooldown = 0.4;
+        },
+
         reset() {
-            this.collected = false;
+            this.collected    = false;
+            this.dropCooldown = 0;
+            this.cx   = this._origCx;
+            this.cy   = this._origCy;
+            this.room = this._origRoom;
         },
     };
 }
 
 // Espada en H1 — recogida segura antes del primer combate
+// Arco en H2 — segunda habitación, incentiva explorar más allá de H1
 // Escudo en H3 — recompensa explorar la habitación más difícil
+// Bastón en H3 — zona superior, lejos de escudo y corazón
+// Corazón en H3 — curación única, solo si HP < máximo
 export const swordPickup  = makePickup('sword',  'H1', 500, 300);
+export const bowPickup    = makePickup('bow',    'H2', 220, 300);
+export const staffPickup  = makePickup('staff',  'H3', 480, 270);
 export const shieldPickup = makePickup('shield', 'H3', 430, 380);
+export const heartPickup  = makePickup('heart',  'H3', 400, 310);

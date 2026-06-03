@@ -1,10 +1,11 @@
 import { game, CANVAS_W, CANVAS_H } from './game.js';
 import { player } from './player.js';
 
-export function drawHUD(ctx) {
+export function drawHUD(ctx, { chestsOpened = 0 } = {}) {
     _drawHealth(ctx);
     _drawItems(ctx);
     _drawCrystals(ctx);
+    _drawChests(ctx, chestsOpened);
     _drawControls(ctx);
 }
 
@@ -36,31 +37,72 @@ function _drawHealth(ctx) {
 }
 
 function _drawItems(ctx) {
-    const hasSword  = player.hasSword;
-    const hasShield = player.hasShield;
+    const weapon     = player.weapon;
+    const hasShield  = player.hasShield;
     const recharging = hasShield && player.shieldCooldown > 0;
 
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(10, 48, 96, 40);
 
-    // --- Sword icon ---
+    // --- Active weapon icon (left slot) ---
     ctx.save();
     ctx.translate(34, 68);
-    ctx.rotate(-Math.PI / 4);
-    ctx.fillStyle = hasSword ? '#f0c040' : 'rgba(110,110,110,0.4)';
-    ctx.fillRect(-2, -12, 4, 22);   // blade
-    ctx.fillStyle = hasSword ? '#c89820' : 'rgba(90,90,90,0.4)';
-    ctx.fillRect(-7, -1, 14, 3);    // guard
-    ctx.fillStyle = hasSword ? '#8b5e2a' : 'rgba(80,80,80,0.35)';
-    ctx.fillRect(-2, 9, 4, 6);      // handle
-    if (hasSword) {
+    if (weapon === 'sword') {
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillStyle = '#f0c040';
+        ctx.fillRect(-2, -12, 4, 22);
+        ctx.fillStyle = '#c89820';
+        ctx.fillRect(-7,  -1, 14,  3);
+        ctx.fillStyle = '#8b5e2a';
+        ctx.fillRect(-2,   9,  4,  6);
         ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fillRect(-1, -12, 2, 9); // highlight
+        ctx.fillRect(-1, -12,  2,  9);
+    } else if (weapon === 'bow') {
+        ctx.strokeStyle = '#8b5e2a';
+        ctx.lineWidth   = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-3, -11);
+        ctx.quadraticCurveTo(8, 0, -3, 11);
+        ctx.stroke();
+        ctx.strokeStyle = '#e8d8a0';
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-3, -11);
+        ctx.lineTo(-3, 11);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+        ctx.fillStyle = '#c8a040';
+        ctx.fillRect(-10, -1, 14, 2);
+        ctx.fillStyle = '#e8e8c0';
+        ctx.fillRect(  4, -2,  3, 4);
+    } else if (weapon === 'staff') {
+        ctx.fillStyle = '#8b6914';
+        ctx.fillRect(-2, -12, 4, 24);
+        ctx.shadowColor = '#a060ff';
+        ctx.shadowBlur  = 6;
+        ctx.fillStyle   = '#a060ff';
+        ctx.beginPath();
+        ctx.arc(0, -14, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.beginPath();
+        ctx.arc(-2, -16, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    } else {
+        // No weapon — dim dash
+        ctx.strokeStyle = 'rgba(120,120,120,0.3)';
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-7, 0);
+        ctx.lineTo( 7, 0);
+        ctx.stroke();
+        ctx.lineWidth = 1;
     }
     ctx.restore();
 
-    // --- Shield icon (heater shape) ---
+    // --- Shield icon (unchanged) ---
     const shieldColor = !hasShield  ? 'rgba(90,90,90,0.35)'
                       : recharging  ? 'rgba(64,128,192,0.35)'
                       :               '#4080c0';
@@ -83,10 +125,18 @@ function _drawItems(ctx) {
     ctx.restore();
 
     // Labels
+    const weaponLabel = weapon === 'sword' ? 'ESP'
+                      : weapon === 'bow'   ? 'ARC'
+                      : weapon === 'staff' ? 'BAS'
+                      : '  -';
+    const weaponColor = weapon === 'sword' ? '#f0e090'
+                      : weapon === 'bow'   ? '#e0a060'
+                      : weapon === 'staff' ? '#c090ff'
+                      : 'rgba(140,140,140,0.55)';
     ctx.font = '9px monospace';
     ctx.textAlign = 'center';
-    ctx.fillStyle = hasSword ? '#f0e090' : 'rgba(140,140,140,0.55)';
-    ctx.fillText('ESP', 34, 83);
+    ctx.fillStyle = weaponColor;
+    ctx.fillText(weaponLabel, 34, 83);
     ctx.fillStyle = !hasShield  ? 'rgba(140,140,140,0.55)'
                   : recharging  ? 'rgba(100,150,200,0.6)'
                   :               '#80c0ff';
@@ -128,6 +178,49 @@ function _drawCrystals(ctx) {
     ctx.font = 'bold 13px monospace';
     ctx.textAlign = 'right';
     ctx.fillText(`${n}/${total}`, CANVAS_W - 12, 35);
+    ctx.textAlign = 'left';
+    ctx.restore();
+}
+
+function _drawChests(ctx, chestsOpened) {
+    const total = 2;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(CANVAS_W - 140, 54, 130, 30);
+
+    for (let i = 0; i < total; i++) {
+        const cx = CANVAS_W - 118 + i * 30;
+        const cy = 69;
+
+        if (i < chestsOpened) {
+            // Open chest (mini)
+            ctx.fillStyle = '#7a4010';
+            ctx.fillRect(cx - 7, cy - 1, 14, 9);
+            ctx.fillStyle = '#1a0800';
+            ctx.fillRect(cx - 6, cy,     12, 7);
+            ctx.fillStyle = 'rgba(255,215,0,0.55)';
+            ctx.fillRect(cx - 3, cy + 2,  6, 3);
+            ctx.fillStyle = '#5a2e08';
+            ctx.fillRect(cx - 7, cy - 12, 14, 5);
+            ctx.fillStyle = '#c8a040';
+            ctx.fillRect(cx - 7, cy - 1,  14, 2);
+        } else {
+            // Closed chest (mini, dimmed)
+            ctx.fillStyle = 'rgba(70,40,10,0.55)';
+            ctx.fillRect(cx - 7, cy - 1, 14, 9);
+            ctx.fillStyle = 'rgba(50,28,6,0.55)';
+            ctx.fillRect(cx - 7, cy - 7, 14, 6);
+            ctx.fillStyle = 'rgba(150,120,40,0.5)';
+            ctx.fillRect(cx - 7, cy - 1, 14, 2);
+            ctx.fillRect(cx - 2, cy - 4,  4, 5);
+        }
+    }
+
+    ctx.fillStyle = chestsOpened === total ? '#FFD700' : '#c8a040';
+    ctx.font      = 'bold 13px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${chestsOpened}/${total}`, CANVAS_W - 12, 73);
     ctx.textAlign = 'left';
     ctx.restore();
 }

@@ -70,6 +70,41 @@ export function drawParticles(ctx) {
     }
 }
 
+export function emitVictory(x, y) {
+    const colors = ['#FFD700', '#FFF080', '#FFB020', '#FFEA40'];
+    for (let i = 0; i < 22; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd   = 50 + Math.random() * 100;
+        _pool.push({
+            x: x + (Math.random() - 0.5) * 80,
+            y: y + (Math.random() - 0.5) * 40,
+            vx: Math.cos(angle) * spd * 0.6,
+            vy: -40 - Math.random() * 80,
+            life: 1.0 + Math.random() * 0.8,
+            maxLife: 1.8,
+            size: 4 + Math.random() * 5,
+            color: colors[Math.floor(Math.random() * 4)],
+        });
+    }
+}
+
+export function emitChest(x, y, color) {
+    for (let i = 0; i < 10; i++) {
+        const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.2;
+        const spd   = 50 + Math.random() * 70;
+        _pool.push({
+            x: x + (Math.random() - 0.5) * 18,
+            y,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd,
+            life:    0.35 + Math.random() * 0.30,
+            maxLife: 0.65,
+            size:    3 + Math.random() * 3,
+            color,
+        });
+    }
+}
+
 export function resetParticles() {
     _pool.length = 0;
 }

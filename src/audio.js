@@ -47,6 +47,56 @@ export function playEnemyDeath() {
     tone({ freq1: 380, freq2: 110, type: 'square', dur: 0.22, gain: 0.10 });
 }
 
+export function playHeal() {
+    tone({ freq1: 500, freq2: 1000, type: 'sine', dur: 0.18, gain: 0.16 });
+}
+
+export function playNpc() {
+    tone({ freq1: 660, freq2: 660, type: 'sine', dur: 0.10, gain: 0.08 });
+}
+
+export function playVictory() {
+    try {
+        const ac = getCtx();
+        [261.63, 329.63, 392.00, 523.25].forEach((freq, i) => {
+            const osc = ac.createOscillator();
+            const g   = ac.createGain();
+            osc.connect(g);
+            g.connect(ac.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            const t = ac.currentTime + i * 0.12;
+            g.gain.setValueAtTime(0.001, t);
+            g.gain.linearRampToValueAtTime(0.20, t + 0.04);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.50);
+            osc.start(t);
+            osc.stop(t + 0.52);
+        });
+    } catch (_) {}
+}
+
+export function playBowShoot() {
+    tone({ freq1: 800, freq2: 200, type: 'sawtooth', dur: 0.07, gain: 0.12 });
+}
+
+export function playStaffShoot() {
+    try {
+        const ac = getCtx();
+        const osc = ac.createOscillator();
+        const g   = ac.createGain();
+        osc.connect(g);
+        g.connect(ac.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, ac.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ac.currentTime + 0.20);
+        g.gain.setValueAtTime(0.001, ac.currentTime);
+        g.gain.linearRampToValueAtTime(0.14, ac.currentTime + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.22);
+        osc.start();
+        osc.stop(ac.currentTime + 0.24);
+    } catch (_) {}
+}
+
 export function playDoorOpen() {
     try {
         const ac = getCtx();
@@ -63,6 +113,26 @@ export function playDoorOpen() {
             g.gain.exponentialRampToValueAtTime(0.001, t + 0.40);
             osc.start(t);
             osc.stop(t + 0.42);
+        });
+    } catch (_) {}
+}
+
+export function playChestOpen() {
+    try {
+        const ac = getCtx();
+        [[440, 0], [660, 0.12]].forEach(([freq, delay]) => {
+            const osc = ac.createOscillator();
+            const g   = ac.createGain();
+            osc.connect(g);
+            g.connect(ac.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            const t = ac.currentTime + delay;
+            g.gain.setValueAtTime(0.001, t);
+            g.gain.linearRampToValueAtTime(0.14, t + 0.03);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+            osc.start(t);
+            osc.stop(t + 0.30);
         });
     } catch (_) {}
 }

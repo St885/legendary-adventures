@@ -1,6 +1,9 @@
 import { CANVAS_W, CANVAS_H } from './game.js';
 
 export function drawStart(ctx) {
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur  = 0;
+    ctx.lineWidth   = 1;
     const bg = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
     bg.addColorStop(0, '#0d1b2a');
     bg.addColorStop(0.6, '#1a2d4a');
@@ -86,17 +89,20 @@ export function drawStart(ctx) {
     // Version
     ctx.fillStyle = 'rgba(100,130,160,0.45)';
     ctx.font      = '11px monospace';
-    ctx.fillText('v1.1 · Legendary Adventures', CANVAS_W / 2, 578);
+    ctx.fillText('v1.3 · Legendary Adventures', CANVAS_W / 2, 578);
 
     ctx.textAlign = 'left';
 }
 
-export function drawWin(ctx, stats = {}) {
-    const { hp = 0, maxHp = 3, kills = 0, crystals = 3 } = stats;
+export function drawWin(ctx, stats = {}, t = 0) {
+    const { hp = 0, maxHp = 3, kills = 0, crystals = 3, talked = false, chestsOpened = 0 } = stats;
 
-    ctx.fillStyle = 'rgba(0,0,0,0.80)';
+    // Full-screen dark overlay
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = '#000000';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
+    // Gold dots decoration
     ctx.fillStyle = 'rgba(255,215,0,0.45)';
     const dots = [
         [300,150],[500,130],[200,280],[600,260],[350,120],
@@ -115,9 +121,10 @@ export function drawWin(ctx, stats = {}) {
     ctx.fillText('¡Oliver ha completado su leyenda!', CANVAS_W / 2, 168);
     ctx.shadowBlur  = 0;
 
+    // Subtitle
     ctx.fillStyle = '#a8d8ff';
     ctx.font      = '16px monospace';
-    ctx.fillText('Las 3 gemas del bosque mágico han sido reunidas', CANVAS_W / 2, 208);
+    ctx.fillText('Las 3 gemas del bosque magico han sido reunidas', CANVAS_W / 2, 208);
 
     // Separator
     ctx.strokeStyle = 'rgba(255,215,0,0.3)';
@@ -127,10 +134,12 @@ export function drawWin(ctx, stats = {}) {
     ctx.lineTo(CANVAS_W / 2 + 210, 230);
     ctx.stroke();
 
-    // Stats — vida (hearts)
+    // Hearts label
     ctx.fillStyle = '#b8b8c8';
     ctx.font      = '13px monospace';
     ctx.fillText('Vida restante', CANVAS_W / 2, 256);
+
+    // Hearts
     const hW = 18, hGap = 7;
     const hTotalW = maxHp * (hW + hGap) - hGap;
     const hx0 = Math.round(CANVAS_W / 2 - hTotalW / 2);
@@ -144,12 +153,12 @@ export function drawWin(ctx, stats = {}) {
         }
     }
 
-    // Stats — gemas y enemigos
+    // Stats
     ctx.fillStyle = '#00d8ff';
     ctx.font      = '15px monospace';
-    ctx.fillText(`Gemas recogidas:     ${crystals} / 3`, CANVAS_W / 2, 306);
+    ctx.fillText('Gemas recogidas:     ' + crystals + ' / 3', CANVAS_W / 2, 306);
     ctx.fillStyle = '#ffaa44';
-    ctx.fillText(`Enemigos derrotados: ${kills} / 7`,   CANVAS_W / 2, 330);
+    ctx.fillText('Enemigos derrotados: ' + kills   + ' / 7', CANVAS_W / 2, 330);
 
     // Second separator
     ctx.strokeStyle = 'rgba(255,215,0,0.3)';
@@ -159,35 +168,91 @@ export function drawWin(ctx, stats = {}) {
     ctx.lineTo(CANVAS_W / 2 + 210, 352);
     ctx.stroke();
 
-    // Three large gem decorations
-    for (let i = 0; i < 3; i++) {
-        const cx = CANVAS_W / 2 - 50 + i * 50;
-        const cy = 396;
+    // Three gem decorations (no save/rotate — use fillRect directly)
+    const gemOffsets = [-50, 0, 50];
+    for (const off of gemOffsets) {
+        const gx = CANVAS_W / 2 + off;
+        const gy = 396;
         ctx.strokeStyle = 'rgba(0,200,255,0.5)';
         ctx.lineWidth   = 2;
         ctx.beginPath();
-        ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+        ctx.arc(gx, gy, 18, 0, Math.PI * 2);
         ctx.stroke();
         ctx.lineWidth = 1;
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(Math.PI / 4);
+        // Diamond via polygon (no rotation transform needed)
         ctx.fillStyle = '#00BFFF';
-        ctx.fillRect(-11, -11, 22, 22);
+        ctx.beginPath();
+        ctx.moveTo(gx,      gy - 13);
+        ctx.lineTo(gx + 13, gy);
+        ctx.lineTo(gx,      gy + 13);
+        ctx.lineTo(gx - 13, gy);
+        ctx.closePath();
+        ctx.fill();
         ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        ctx.fillRect(-3, -11, 5, 11);
-        ctx.restore();
+        ctx.fillRect(gx - 2, gy - 8, 4, 8);
     }
 
-    // CTA
+    // Performance message
+    let perfColor, perfMsg;
+    if (kills >= 7 && hp >= maxHp) {
+        perfColor = '#FFD700';
+        perfMsg   = 'Leyenda perfecta: todos vencidos sin perder vida';
+    } else if (kills >= 7) {
+        perfColor = '#ffaa44';
+        perfMsg   = 'Cazador valiente: derrotaste a todos los enemigos';
+    } else if (hp >= maxHp) {
+        perfColor = '#80ff80';
+        perfMsg   = 'Explorador intacto: llegaste sin recibir dano';
+    } else {
+        perfColor = '#a8d8ff';
+        perfMsg   = 'La leyenda de Oliver perdurara en el bosque';
+    }
+    ctx.fillStyle = perfColor;
+    ctx.font      = '14px monospace';
+    ctx.fillText(perfMsg, CANVAS_W / 2, 438);
+
+    // Optional lines — dynamic Y so they never overlap
+    let nextY = 458;
+
+    if (talked) {
+        ctx.fillStyle = '#c8a0ff';
+        ctx.font      = '13px monospace';
+        ctx.fillText('Escuchaste la sabiduria del Anciano del Bosque', CANVAS_W / 2, nextY);
+        nextY += 18;
+    }
+
+    if (kills >= 7) {
+        ctx.fillStyle = '#FFD700';
+        ctx.font      = 'bold 13px monospace';
+        ctx.fillText('Logro: Cazador legendario', CANVAS_W / 2, nextY);
+        nextY += 15;
+        ctx.fillStyle = '#e8e8e8';
+        ctx.font      = '12px monospace';
+        ctx.fillText('Derrotaste a todas las criaturas del bosque.', CANVAS_W / 2, nextY);
+        nextY += 18;
+    }
+
+    if (chestsOpened >= 2) {
+        ctx.fillStyle = '#c8a040';
+        ctx.font      = 'bold 13px monospace';
+        ctx.fillText('Explorador completo', CANVAS_W / 2, nextY);
+        nextY += 15;
+        ctx.fillStyle = '#e8e8e8';
+        ctx.font      = '12px monospace';
+        ctx.fillText('Abriste todos los cofres del bosque.', CANVAS_W / 2, nextY);
+        nextY += 18;
+    }
+
+    // CTA — at least y=510, pushed down if optional lines need space
+    const ctaY    = Math.max(510, nextY + 14);
     ctx.fillStyle = '#ffffff';
     ctx.font      = 'bold 20px monospace';
-    ctx.fillText('Presiona R para jugar de nuevo', CANVAS_W / 2, 454);
+    ctx.fillText('Presiona R para jugar de nuevo', CANVAS_W / 2, ctaY);
 
     // Footer
     ctx.fillStyle = 'rgba(200,200,200,0.35)';
     ctx.font      = '12px monospace';
-    ctx.fillText('v1.1 · Legendary Adventures', CANVAS_W / 2, 572);
+    ctx.fillText('v1.3 · Legendary Adventures', CANVAS_W / 2, Math.max(572, ctaY + 28));
 
     ctx.textAlign = 'left';
 }
@@ -267,7 +332,7 @@ export function drawDead(ctx, stats = {}) {
     // Footer
     ctx.fillStyle = 'rgba(200,200,200,0.35)';
     ctx.font      = '12px monospace';
-    ctx.fillText('v1.1 · Legendary Adventures', CANVAS_W / 2, 572);
+    ctx.fillText('v1.3 · Legendary Adventures', CANVAS_W / 2, 572);
 
     ctx.textAlign = 'left';
 }

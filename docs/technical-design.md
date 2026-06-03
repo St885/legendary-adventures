@@ -1,8 +1,9 @@
 # Technical Design Document — Legendary Adventures
 
 > **Nota histórica:** Este documento refleja el diseño de la versión v1.0 (MVP).
-> El juego actual es v1.1 e incluye archivos y sistemas adicionales no documentados aquí
-> (enemy.js, pickup.js, particles.js, audio.js, estados PAUSED/DEAD, enemigos y combate).
+> El juego actual es v1.3 e incluye archivos y sistemas adicionales no documentados aquí
+> (enemy.js, pickup.js, particles.js, audio.js, npc.js, chest.js, projectile.js,
+> estados PAUSED/DEAD, sistema de armas con proyectiles, cofres, logros).
 > Se mantiene como referencia arquitectónica; para el estado actual ver el código fuente.
 
 **Versión:** 1.0 (histórico)
@@ -51,8 +52,11 @@
 │   ├── pickup.js           ← [v1.1] espada y escudo como objetos recogibles
 │   ├── particles.js        ← [v1.1] sistema de partículas (gemas, muerte, puerta)
 │   ├── audio.js            ← [v1.1] Web Audio API: SFX y música ambiental
-│   ├── hud.js              ← overlay HUD (vida, objetos, cristales, controles)
-│   ├── screens.js          ← pantallas START, WIN y DEAD con estadísticas
+│   ├── hud.js              ← overlay HUD (vida, arma, cristales, cofres, controles)
+│   ├── screens.js          ← pantallas START, WIN y DEAD con estadísticas y logros
+│   ├── npc.js              ← [v1.2] Anciano del Bosque: diálogo y proximidad
+│   ├── chest.js            ← [v1.2] 2 cofres con apertura por contacto
+│   ├── projectile.js       ← [v1.3] pool de proyectiles (flechas y bolas mágicas)
 │   └── collision.js        ← helpers AABB
 └── assets/
     ├── images/             ← vacío (se usa Canvas drawing)

@@ -1,5 +1,7 @@
 # Legendary Adventures
 
+**Juego en vivo:** https://st885.github.io/legendary-adventures/
+
 Videojuego de aventura top-down 2D en HTML5 Canvas. Oliver, joven explorador mágico,
 debe recorrer el bosque encantado, recoger 3 gemas y desbloquear la Puerta del Santuario.
 
@@ -29,7 +31,7 @@ npx serve .
 | S / ↓ | Mover abajo |
 | A / ← | Mover izquierda |
 | D / → | Mover derecha |
-| Espacio | Atacar con la espada |
+| Espacio | Usar arma activa (espada / arco / bastón) |
 | Enter | Iniciar aventura |
 | P     | Pausar / reanudar |
 | R     | Reiniciar partida |
@@ -75,11 +77,14 @@ legendary-adventures/
 │   ├── crystal.js    — 3 gemas recolectables con posición aleatoria
 │   ├── door.js       — puerta bloqueada/abierta + checkVictory
 │   ├── enemy.js      — enemigos por sala con IA y estilos visuales
-│   ├── pickup.js     — espada y escudo como objetos recogibles
+│   ├── pickup.js     — espada, arco, bastón, escudo y corazón como objetos recogibles
 │   ├── particles.js  — sistema de partículas (gemas, muerte, puerta)
 │   ├── audio.js      — Web Audio API: SFX y música ambiental
 │   ├── hud.js        — HUD: vida, objetos, cristales, controles
-│   ├── screens.js    — pantallas START, WIN y DEAD con estadísticas
+│   ├── screens.js    — pantallas START, WIN y DEAD con estadísticas y logros
+│   ├── npc.js        — Anciano del Bosque: diálogo y proximidad
+│   ├── chest.js      — 2 cofres con apertura por contacto
+│   ├── projectile.js — sistema de proyectiles (flechas y bolas mágicas)
 │   ├── collision.js  — AABB separado por ejes
 │   └── input.js      — teclado
 └── assets/

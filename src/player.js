@@ -11,9 +11,11 @@ export const player = {
     hp: 3,
     maxHp: 3,
 
-    hasSword: false,
+    weapon: null,
     hasShield: false,
     shieldCooldown: 0,
+
+    get hasSword() { return this.weapon === 'sword'; },
 
     invincible: false,
     invincTimer: 0,
@@ -90,6 +92,10 @@ export const player = {
             this.invincTimer = 1.5;
             if (this.hp <= 0) game.state = 'DEAD';
         }
+    },
+
+    heal(amount) {
+        this.hp = Math.min(this.hp + amount, this.maxHp);
     },
 
     draw(ctx) {
@@ -185,7 +191,7 @@ export const player = {
         this.y = y ?? 200;
         this.facing = 'down';
         this.hp = this.maxHp;
-        this.hasSword = false;
+        this.weapon = null;
         this.hasShield = false;
         this.shieldCooldown = 0;
         this.invincible = false;

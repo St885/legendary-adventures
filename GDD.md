@@ -1,8 +1,8 @@
 # Game Design Document — Legendary Adventures
 
-**Versión:** 1.0  
-**Fecha:** 2026-06-01  
-**Estado:** Aprobado  
+**Versión:** 1.3  
+**Fecha:** 2026-06-03  
+**Estado:** v1.1 publicado — https://st885.github.io/legendary-adventures/ · v1.3 local (pendiente de push)  
 **Referencia de producto:** `01_agentes/agente-product-owner/productos/legendary-adventures/ficha-producto.md`
 
 ---
@@ -226,5 +226,7 @@ Ventajas de esta decisión:
 |---------|----------|--------|
 | v1.0 | MVP: 4 habitaciones, 3 gemas, puerta final, Oliver, colisiones, HUD, START/WIN | ✅ Entregado |
 | v1.1 | Enemigos, espada, escudo, partículas, SFX Web Audio API, música ambiental, pausa, WIN/DEAD con estadísticas | ✅ Entregado |
-| v2.0 | Walk cycle de Oliver, NPC con 1 línea de texto, habitación secreta | Pendiente |
+| v1.2 | Cofres (H2/H3), NPC Anciano del Bosque, pantalla WIN con logros y mensajes de rendimiento, HUD cofres | ✅ Entregado |
+| v1.3 | Arco y bastón mágico, sistema de proyectiles, HUD arma activa, drop de arma anterior | ✅ Entregado |
+| v2.0 | Walk cycle de Oliver, habitación secreta, jefe final | Pendiente |
 | v3.0 | Segunda área, inventario básico, guardado local, jefe final | Pendiente |

@@ -7,9 +7,9 @@
 | **Nombre** | Legendary Adventures |
 | **Género** | Aventura top-down 2D |
 | **Stack** | HTML5 Canvas + JavaScript ES6+ + CSS3 |
-| **Estado** | MVP completo — listo para publicar |
+| **Estado** | ✅ Publicado en GitHub Pages — v1.1 · Local en v1.3 (pendiente de push) |
 | **Carpeta** | `03_juegos/legendary-adventures/` |
-| **GitHub Pages** | Pendiente de activar |
+| **GitHub Pages** | https://st885.github.io/legendary-adventures/ |
 
 ---
 
@@ -101,6 +101,15 @@ npx serve .
 | E6 Publicación mínima — README + .gitignore | ✅ Completa |
 | Fase 5 — Polish visual (enemy.js, pickup.js, particles.js, crystal/door animados) | ✅ Completa |
 | Fase 6 — Sonido, pausa y experiencia final (audio.js, P-key, WIN/DEAD con estadísticas) | ✅ Completa |
+| Fase 7 — Pantalla WIN mejorada (mensajes de rendimiento, bonus NPC, v1.2) | ✅ Completa |
+| Fase 8 — Sistema de armas: arco, bastón, proyectiles, drop de arma (v1.3) | ✅ Completa (local) |
+
+### Notas técnicas v1.3
+- `src/projectile.js` → nuevo: pool de proyectiles, flechas (daño 1) y bolas mágicas (daño 2)
+- `src/pickup.js` → arco (H2, cx:220, cy:300), bastón (H3, cx:480, cy:270); `dropAt()` posiciona el arma anterior cerca de Oliver al hacer swap
+- `src/player.js` → `weapon: null | 'sword' | 'bow' | 'staff'`; getter `hasSword` para compatibilidad
+- `src/audio.js` → `playBowShoot`, `playStaffShoot`, `playChestOpen`; `playVictory` definida pero no importada (pendiente)
+- `particles.js` → `emitVictory` definida pero no importada (pendiente — evitar caché de módulos ES6)
 
 ---
 
