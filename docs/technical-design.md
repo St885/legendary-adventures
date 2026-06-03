@@ -1,7 +1,7 @@
 # Technical Design Document — Legendary Adventures
 
 > **Nota histórica:** Este documento refleja el diseño de la versión v1.0 (MVP).
-> El juego actual es v1.3 e incluye archivos y sistemas adicionales no documentados aquí
+> El juego actual es v1.4 e incluye archivos y sistemas adicionales no documentados aquí
 > (enemy.js, pickup.js, particles.js, audio.js, npc.js, chest.js, projectile.js,
 > estados PAUSED/DEAD, sistema de armas con proyectiles, cofres, logros).
 > Se mantiene como referencia arquitectónica; para el estado actual ver el código fuente.

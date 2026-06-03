@@ -83,3 +83,61 @@ export function drawProjectiles(ctx) {
 export function resetProjectiles() {
     _pool.length = 0;
 }
+
+// ── Enemy projectiles ──────────────────────────────────────────────────────────
+
+const _enemyPool = [];
+
+export function fireEnemyProjectile(cx, cy, dx, dy) {
+    const size = 10;
+    _enemyPool.push({
+        x: cx - size / 2, y: cy - size / 2,
+        vx: dx * 150, vy: dy * 150,
+        w: size, h: size,
+        alive: true,
+    });
+}
+
+export function getEnemyProjectiles() { return _enemyPool; }
+
+export function updateEnemyProjectiles(dt, obstacles) {
+    for (let i = _enemyPool.length - 1; i >= 0; i--) {
+        const p = _enemyPool[i];
+        if (!p.alive) { _enemyPool.splice(i, 1); continue; }
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.x + p.w < 0 || p.x > CANVAS_W || p.y + p.h < 0 || p.y > CANVAS_H) {
+            _enemyPool.splice(i, 1);
+            continue;
+        }
+        let hitObs = false;
+        for (const obs of obstacles) {
+            if (overlaps(p, obs)) { hitObs = true; break; }
+        }
+        if (hitObs) _enemyPool.splice(i, 1);
+    }
+}
+
+export function drawEnemyProjectiles(ctx) {
+    for (const p of _enemyPool) {
+        if (!p.alive) continue;
+        const cx = p.x + p.w / 2;
+        const cy = p.y + p.h / 2;
+        ctx.shadowColor = '#ff4010';
+        ctx.shadowBlur  = 8;
+        ctx.fillStyle   = '#ff6030';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 4;
+        ctx.fillStyle  = 'rgba(255,200,100,0.7)';
+        ctx.beginPath();
+        ctx.arc(cx - 1, cy - 1, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+}
+
+export function resetEnemyProjectiles() {
+    _enemyPool.length = 0;
+}

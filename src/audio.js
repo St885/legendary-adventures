@@ -1,6 +1,10 @@
 let _ctx = null;
-let _ambientGain = null;
-let _ambientOscs = [];
+let _ambientGain  = null;
+let _melodyGain   = null;
+let _ambientOscs  = [];
+let _melodyIdx     = 0;
+let _melodyTimeout = null;
+const _MELODY = [329.63, 392.00, 440.00, 523.25, 659.25, 523.25, 440.00, 392.00];
 
 function getCtx() {
     if (!_ctx) {
@@ -45,6 +49,10 @@ export function playHurt() {
 
 export function playEnemyDeath() {
     tone({ freq1: 380, freq2: 110, type: 'square', dur: 0.22, gain: 0.10 });
+}
+
+export function playEnemyShoot() {
+    tone({ freq1: 320, freq2: 180, type: 'sine', dur: 0.12, gain: 0.08 });
 }
 
 export function playHeal() {
@@ -137,13 +145,37 @@ export function playChestOpen() {
     } catch (_) {}
 }
 
+function _scheduleNote() {
+    if (!_melodyGain) return;
+    try {
+        const ac   = getCtx();
+        const freq = _MELODY[_melodyIdx % _MELODY.length];
+        const t    = ac.currentTime;
+        const osc  = ac.createOscillator();
+        const g    = ac.createGain();
+        osc.connect(g);
+        g.connect(_melodyGain);
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0,      t);
+        g.gain.linearRampToValueAtTime(0.055, t + 0.06);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.40);
+        osc.start(t);
+        osc.stop(t + 0.42);
+        _melodyIdx++;
+        _melodyTimeout = setTimeout(_scheduleNote, 500);
+    } catch (_) {}
+}
+
 export function startAmbient() {
     if (_ambientOscs.length) return;
     try {
         const ac = getCtx();
+
+        // Quiet bass pad for depth
         _ambientGain = ac.createGain();
         _ambientGain.gain.setValueAtTime(0, ac.currentTime);
-        _ambientGain.gain.linearRampToValueAtTime(0.03, ac.currentTime + 2.0);
+        _ambientGain.gain.linearRampToValueAtTime(0.022, ac.currentTime + 2.5);
         _ambientGain.connect(ac.destination);
         for (const freq of [130.81, 196.00]) {
             const osc = ac.createOscillator();
@@ -153,16 +185,21 @@ export function startAmbient() {
             osc.start();
             _ambientOscs.push(osc);
         }
+
+        // Melody pass-through gain
+        _melodyGain = ac.createGain();
+        _melodyGain.gain.setValueAtTime(1.0, ac.currentTime);
+        _melodyGain.connect(ac.destination);
+
+        _melodyIdx = 0;
+        _scheduleNote();
     } catch (_) {}
 }
 
 export function stopAmbient() {
-    for (const osc of _ambientOscs) {
-        try { osc.stop(); } catch (_) {}
-    }
+    if (_melodyTimeout !== null) { clearTimeout(_melodyTimeout); _melodyTimeout = null; }
+    for (const osc of _ambientOscs) { try { osc.stop(); } catch (_) {} }
     _ambientOscs = [];
-    if (_ambientGain) {
-        try { _ambientGain.disconnect(); } catch (_) {}
-        _ambientGain = null;
-    }
+    if (_ambientGain) { try { _ambientGain.disconnect(); } catch (_) {} _ambientGain = null; }
+    if (_melodyGain)  { try { _melodyGain.disconnect();  } catch (_) {} _melodyGain  = null; }
 }

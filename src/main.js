@@ -6,13 +6,14 @@ import { ROOMS, drawRoom } from './world.js';
 import { crystals, resetCrystals } from './crystal.js';
 import { drawHUD } from './hud.js';
 import { door } from './door.js';
-import { ENEMIES } from './enemy.js';
+import { ENEMIES, resetEnemies } from './enemy.js';
 import { swordPickup, bowPickup, staffPickup, shieldPickup, heartPickup } from './pickup.js';
-import { fireProjectile, getProjectiles, updateProjectiles, drawProjectiles, resetProjectiles } from './projectile.js';
+import { fireProjectile, getProjectiles, updateProjectiles, drawProjectiles, resetProjectiles,
+         fireEnemyProjectile, getEnemyProjectiles, updateEnemyProjectiles, drawEnemyProjectiles, resetEnemyProjectiles } from './projectile.js';
 import { npc } from './npc.js';
 import { overlaps } from './collision.js';
 import { emitGem, emitDeath, emitDoorOpen, emitChest, updateParticles, drawParticles, resetParticles } from './particles.js';
-import { initAudio, playGem, playSword, playHurt, playEnemyDeath, playDoorOpen, playHeal, playNpc, playChestOpen, playBowShoot, playStaffShoot, startAmbient, stopAmbient } from './audio.js';
+import { initAudio, playGem, playSword, playHurt, playEnemyDeath, playEnemyShoot, playDoorOpen, playHeal, playNpc, playChestOpen, playBowShoot, playStaffShoot, startAmbient, stopAmbient } from './audio.js';
 import { chestH2, chestH3 } from './chest.js';
 
 const weaponPickups = { sword: swordPickup, bow: bowPickup, staff: staffPickup };
@@ -74,7 +75,7 @@ let winTimer = 0;
 function handleReset() {
     resetGame();
     player.reset();
-    for (const enemy of ENEMIES) enemy.reset();
+    resetEnemies();
     swordPickup.reset();
     bowPickup.reset();
     staffPickup.reset();
@@ -84,6 +85,7 @@ function handleReset() {
     resetCrystals();
     resetParticles();
     resetProjectiles();
+    resetEnemyProjectiles();
     chestH2.reset();
     chestH3.reset();
     doorWasOpen = false;
@@ -169,7 +171,23 @@ function update(dt) {
 
         for (const enemy of roomEnemies) enemy.update(dt, room.obstacles);
 
+        // Ranged enemies shoot at Oliver when within range
+        for (const enemy of roomEnemies) {
+            if (enemy.type !== 'ranged' || !enemy.alive) continue;
+            if (enemy.shootCooldown > 0) { enemy.shootCooldown -= dt; continue; }
+            const ex = enemy.x + enemy.w / 2, ey = enemy.y + enemy.h / 2;
+            const px = player.x + player.w / 2, py = player.y + player.h / 2;
+            const dx = px - ex, dy = py - ey;
+            const distSq = dx * dx + dy * dy;
+            if (distSq > 220 * 220) continue;
+            const dist = Math.sqrt(distSq);
+            fireEnemyProjectile(ex, ey, dx / dist, dy / dist);
+            playEnemyShoot();
+            enemy.shootCooldown = 3.0;
+        }
+
         updateProjectiles(dt, obstacles);
+        updateEnemyProjectiles(dt, obstacles);
 
         // Projectiles hit enemies
         for (const proj of getProjectiles()) {
@@ -184,6 +202,16 @@ function update(dt) {
                     }
                     break;
                 }
+            }
+        }
+
+        // Enemy projectiles hit Oliver
+        for (const proj of getEnemyProjectiles()) {
+            if (proj.alive && overlaps(proj, player)) {
+                proj.alive = false;
+                if (!player.invincible) playHurt();
+                player.takeDamage();
+                break;
             }
         }
 
@@ -338,6 +366,7 @@ function render() {
     }
 
     drawProjectiles(ctx);
+    drawEnemyProjectiles(ctx);
 
     // Player (sword drawn first so it appears behind Oliver's body)
     player.drawSword(ctx);

@@ -7,7 +7,7 @@
 | **Nombre** | Legendary Adventures |
 | **Género** | Aventura top-down 2D |
 | **Stack** | HTML5 Canvas + JavaScript ES6+ + CSS3 |
-| **Estado** | ✅ Publicado en GitHub Pages — v1.1 · Local en v1.3 (pendiente de push) |
+| **Estado** | ✅ Publicado en GitHub Pages — v1.3 · Local en v1.4 (pendiente de push) |
 | **Carpeta** | `03_juegos/legendary-adventures/` |
 | **GitHub Pages** | https://st885.github.io/legendary-adventures/ |
 
@@ -102,7 +102,15 @@ npx serve .
 | Fase 5 — Polish visual (enemy.js, pickup.js, particles.js, crystal/door animados) | ✅ Completa |
 | Fase 6 — Sonido, pausa y experiencia final (audio.js, P-key, WIN/DEAD con estadísticas) | ✅ Completa |
 | Fase 7 — Pantalla WIN mejorada (mensajes de rendimiento, bonus NPC, v1.2) | ✅ Completa |
-| Fase 8 — Sistema de armas: arco, bastón, proyectiles, drop de arma (v1.3) | ✅ Completa (local) |
+| Fase 8 — Sistema de armas: arco, bastón, proyectiles, drop de arma (v1.3) | ✅ Completa |
+| Fase 9 — Música procedural, 10 enemigos dinámicos, 3 ranged con proyectiles (v1.4) | ✅ Completa (local) |
+
+### Notas técnicas v1.4
+- `src/audio.js` → melodía pentatónica en loop (triangle wave, 8 notas, 500ms/nota); `_scheduleNote` + `_melodyGain`; `playEnemyShoot()`
+- `src/enemy.js` → `SPAWN_POOLS` por habitación, `resetEnemies()`, 10 enemigos (H1×1, H2×2, H3×3, H4×4), `type: 'ranged'` con `shootCooldown`
+- `src/projectile.js` → `_enemyPool` independiente: `fireEnemyProjectile`, `updateEnemyProjectiles`, `drawEnemyProjectiles`, `resetEnemyProjectiles`
+- `src/main.js` → loop de disparo ranged (rango 220px, cooldown 3s), colisión `_enemyPool` → `player.takeDamage()`
+- `src/screens.js` → `/ 7` → `/ 10`, `kills >= 7` → `kills >= 10` (5 lugares)
 
 ### Notas técnicas v1.3
 - `src/projectile.js` → nuevo: pool de proyectiles, flechas (daño 1) y bolas mágicas (daño 2)

@@ -89,7 +89,7 @@ export function drawStart(ctx) {
     // Version
     ctx.fillStyle = 'rgba(100,130,160,0.45)';
     ctx.font      = '11px monospace';
-    ctx.fillText('v1.3 · Legendary Adventures', CANVAS_W / 2, 578);
+    ctx.fillText('v1.4 · Legendary Adventures', CANVAS_W / 2, 578);
 
     ctx.textAlign = 'left';
 }
@@ -158,7 +158,7 @@ export function drawWin(ctx, stats = {}, t = 0) {
     ctx.font      = '15px monospace';
     ctx.fillText('Gemas recogidas:     ' + crystals + ' / 3', CANVAS_W / 2, 306);
     ctx.fillStyle = '#ffaa44';
-    ctx.fillText('Enemigos derrotados: ' + kills   + ' / 7', CANVAS_W / 2, 330);
+    ctx.fillText('Enemigos derrotados: ' + kills   + ' / 10', CANVAS_W / 2, 330);
 
     // Second separator
     ctx.strokeStyle = 'rgba(255,215,0,0.3)';
@@ -194,10 +194,10 @@ export function drawWin(ctx, stats = {}, t = 0) {
 
     // Performance message
     let perfColor, perfMsg;
-    if (kills >= 7 && hp >= maxHp) {
+    if (kills >= 10 && hp >= maxHp) {
         perfColor = '#FFD700';
         perfMsg   = 'Leyenda perfecta: todos vencidos sin perder vida';
-    } else if (kills >= 7) {
+    } else if (kills >= 10) {
         perfColor = '#ffaa44';
         perfMsg   = 'Cazador valiente: derrotaste a todos los enemigos';
     } else if (hp >= maxHp) {
@@ -221,7 +221,7 @@ export function drawWin(ctx, stats = {}, t = 0) {
         nextY += 18;
     }
 
-    if (kills >= 7) {
+    if (kills >= 10) {
         ctx.fillStyle = '#FFD700';
         ctx.font      = 'bold 13px monospace';
         ctx.fillText('Logro: Cazador legendario', CANVAS_W / 2, nextY);
@@ -252,7 +252,7 @@ export function drawWin(ctx, stats = {}, t = 0) {
     // Footer
     ctx.fillStyle = 'rgba(200,200,200,0.35)';
     ctx.font      = '12px monospace';
-    ctx.fillText('v1.3 · Legendary Adventures', CANVAS_W / 2, Math.max(572, ctaY + 28));
+    ctx.fillText('v1.4 · Legendary Adventures', CANVAS_W / 2, Math.max(572, ctaY + 28));
 
     ctx.textAlign = 'left';
 }
@@ -297,7 +297,7 @@ export function drawDead(ctx, stats = {}) {
     ctx.font      = '15px monospace';
     ctx.fillText(`Gemas recogidas:     ${crystals} / 3`, CANVAS_W / 2, 288);
     ctx.fillStyle = '#ffaa44';
-    ctx.fillText(`Enemigos derrotados: ${kills} / 7`,   CANVAS_W / 2, 312);
+    ctx.fillText(`Enemigos derrotados: ${kills} / 10`,  CANVAS_W / 2, 312);
 
     // Second separator
     ctx.strokeStyle = 'rgba(200,50,50,0.28)';
@@ -332,7 +332,7 @@ export function drawDead(ctx, stats = {}) {
     // Footer
     ctx.fillStyle = 'rgba(200,200,200,0.35)';
     ctx.font      = '12px monospace';
-    ctx.fillText('v1.3 · Legendary Adventures', CANVAS_W / 2, 572);
+    ctx.fillText('v1.4 · Legendary Adventures', CANVAS_W / 2, 572);
 
     ctx.textAlign = 'left';
 }

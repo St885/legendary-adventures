@@ -2,44 +2,91 @@ import { CANVAS_W, CANVAS_H } from './game.js';
 import { resolveX, resolveY, clampToBounds } from './collision.js';
 
 const ENEMY_STYLE = {
-    H2: { body: '#1a6a58', head: '#0d4a3a', eye: '#80eeff', trait: 'slime' },
-    H3: { body: '#5a1a7a', head: '#3a0d52', eye: '#dd88ff', trait: 'spike' },
-    H4: { body: '#6a5030', head: '#4a3418', eye: '#ffaa40', trait: 'stone' },
+    H1: { body: '#4a8a2a', head: '#2a5a10', eye: '#c0ff80', trait: 'forest' },
+    H2: { body: '#1a6a58', head: '#0d4a3a', eye: '#80eeff', trait: 'slime'  },
+    H3: { body: '#5a1a7a', head: '#3a0d52', eye: '#dd88ff', trait: 'spike'  },
+    H4: { body: '#6a5030', head: '#4a3418', eye: '#ffaa40', trait: 'stone'  },
 };
 
-function makeEnemy(room, spawnX, spawnY, patrolAxis, patrolMin, patrolMax) {
+// Validated positions per room — shuffled on every reset to randomise spawns
+const SPAWN_POOLS = {
+    H1: [
+        { x: 400, y: 380, axis: 'x', min: 340, max: 520 },
+        { x: 560, y: 330, axis: 'x', min: 480, max: 640 },
+        { x: 300, y: 310, axis: 'x', min: 220, max: 380 },
+        { x: 450, y: 440, axis: 'x', min: 380, max: 550 },
+        { x: 620, y: 280, axis: 'x', min: 540, max: 680 },
+        { x: 350, y: 470, axis: 'y', min: 430, max: 560 },
+    ],
+    H2: [
+        { x: 160, y: 300, axis: 'x', min:  90, max: 270 },
+        { x: 560, y: 300, axis: 'x', min: 490, max: 640 },
+        { x: 200, y: 430, axis: 'x', min: 160, max: 300 },
+        { x: 540, y: 430, axis: 'x', min: 460, max: 620 },
+        { x: 200, y: 175, axis: 'x', min:  90, max: 290 },
+        { x: 540, y: 175, axis: 'x', min: 450, max: 620 },
+    ],
+    H3: [
+        { x: 325, y: 220, axis: 'x', min: 250, max: 420 },
+        { x: 370, y: 355, axis: 'x', min: 280, max: 500 },
+        { x: 160, y: 250, axis: 'y', min: 150, max: 360 },
+        { x: 530, y: 120, axis: 'x', min: 450, max: 640 },
+        { x: 380, y: 410, axis: 'x', min: 300, max: 500 },
+        { x: 200, y: 490, axis: 'x', min: 160, max: 290 },
+        { x: 540, y: 460, axis: 'x', min: 450, max: 600 },
+        { x: 400, y: 120, axis: 'x', min: 300, max: 490 },
+    ],
+    H4: [
+        { x: 200, y: 210, axis: 'y', min: 210, max: 390 },
+        { x: 570, y: 210, axis: 'y', min: 210, max: 390 },
+        { x: 340, y: 120, axis: 'x', min: 210, max: 470 },
+        { x: 340, y: 450, axis: 'x', min: 210, max: 470 },
+        { x: 200, y: 290, axis: 'y', min: 215, max: 390 },
+        { x: 570, y: 290, axis: 'y', min: 215, max: 390 },
+        { x: 280, y: 155, axis: 'x', min: 160, max: 420 },
+        { x: 480, y: 450, axis: 'x', min: 300, max: 570 },
+    ],
+};
+
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function makeEnemy(room, type = 'melee') {
     return {
-        room,
-        x: spawnX, y: spawnY,
+        room, type,
+        x: 0, y: 0,
         w: 22, h: 26,
         hp: 2, maxHp: 2,
         speed: 60,
         alive: true,
-        patrolAxis, patrolMin, patrolMax,
+        patrolAxis: 'x', patrolMin: 0, patrolMax: 100,
         dir: 1,
         invincible: false,
         invincTimer: 0,
-        spawnX, spawnY,
+        spawnX: 0, spawnY: 0,
+        shootCooldown: 0,
         style: ENEMY_STYLE[room] || ENEMY_STYLE.H2,
 
         update(dt, obstacles) {
             if (!this.alive) return;
-
             if (this.invincTimer > 0) {
                 this.invincTimer -= dt;
                 if (this.invincTimer <= 0) this.invincible = false;
             }
-
             if (this.patrolAxis === 'x') {
                 this.x += this.speed * this.dir * dt;
-                if (this.x <= this.patrolMin)              { this.x = this.patrolMin;              this.dir =  1; }
-                if (this.x + this.w >= this.patrolMax)     { this.x = this.patrolMax - this.w;     this.dir = -1; }
+                if (this.x <= this.patrolMin)         { this.x = this.patrolMin;         this.dir =  1; }
+                if (this.x + this.w >= this.patrolMax) { this.x = this.patrolMax - this.w; this.dir = -1; }
             } else {
                 this.y += this.speed * this.dir * dt;
-                if (this.y <= this.patrolMin)              { this.y = this.patrolMin;              this.dir =  1; }
-                if (this.y + this.h >= this.patrolMax)     { this.y = this.patrolMax - this.h;     this.dir = -1; }
+                if (this.y <= this.patrolMin)         { this.y = this.patrolMin;         this.dir =  1; }
+                if (this.y + this.h >= this.patrolMax) { this.y = this.patrolMax - this.h; this.dir = -1; }
             }
-
             for (const obs of obstacles) resolveX(this, obs);
             for (const obs of obstacles) resolveY(this, obs);
             clampToBounds(this, 0, 0, CANVAS_W, CANVAS_H);
@@ -49,6 +96,18 @@ function makeEnemy(room, spawnX, spawnY, patrolAxis, patrolMin, patrolMax) {
             if (!this.alive) return;
             const flash = this.invincible && Math.floor(this.invincTimer * 12) % 2 === 0;
             const s = this.style;
+
+            // Ranged indicator — orange orb floating above head
+            if (this.type === 'ranged' && !flash) {
+                const bob = Math.sin(performance.now() / 500) * 2;
+                ctx.shadowColor = '#ff6020';
+                ctx.shadowBlur  = 6;
+                ctx.fillStyle   = '#ff8030';
+                ctx.beginPath();
+                ctx.arc(this.x + this.w / 2, this.y - 9 + bob, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
 
             // Spike crown (H3)
             if (!flash && s.trait === 'spike') {
@@ -88,7 +147,6 @@ function makeEnemy(room, spawnX, spawnY, patrolAxis, patrolMin, patrolMax) {
             if (!flash) {
                 ctx.fillStyle = s.eye;
                 if (s.trait === 'slime') {
-                    // Single wide central eye
                     ctx.fillRect(this.x + 6, this.y + 3, 10, 5);
                 } else {
                     ctx.fillRect(this.x + 4,          this.y + 3, 5, 5);
@@ -123,29 +181,45 @@ function makeEnemy(room, spawnX, spawnY, patrolAxis, patrolMin, patrolMax) {
         },
 
         reset() {
-            this.x = this.spawnX;
-            this.y = this.spawnY;
-            this.hp = this.maxHp;
-            this.alive = true;
-            this.invincible = false;
-            this.invincTimer = 0;
-            this.dir = 1;
+            this.x            = this.spawnX;
+            this.y            = this.spawnY;
+            this.hp           = this.maxHp;
+            this.alive        = true;
+            this.invincible   = false;
+            this.invincTimer  = 0;
+            this.dir          = 1;
+            this.shootCooldown = 0;
         },
     };
 }
 
-// H1 — zona segura, sin enemigos
-// H2 — 2 enemigos (izquierda y derecha de la fuente)
-// H3 — 3 enemigos (corredor superior, zona derecha, corredor izquierdo cerca de C3)
-// H4 — 2 enemigos (entre pilares, guardando el arco)
+// H1: 1 melee  |  H2: 2 melee  |  H3: 2 melee + 1 ranged  |  H4: 2 melee + 2 ranged
 export const ENEMIES = [
-    makeEnemy('H2', 160, 300, 'x', 160, 310),
-    makeEnemy('H2', 490, 300, 'x', 490, 620),
-
-    makeEnemy('H3', 325, 220, 'x', 250, 400),
-    makeEnemy('H3', 380, 320, 'x', 380, 620),
-    makeEnemy('H3', 160, 250, 'x', 160, 280),
-
-    makeEnemy('H4', 200, 210, 'y', 210, 390),
-    makeEnemy('H4', 570, 210, 'y', 210, 390),
+    makeEnemy('H1', 'melee'),
+    makeEnemy('H2', 'melee'),
+    makeEnemy('H2', 'melee'),
+    makeEnemy('H3', 'melee'),
+    makeEnemy('H3', 'melee'),
+    makeEnemy('H3', 'ranged'),
+    makeEnemy('H4', 'melee'),
+    makeEnemy('H4', 'melee'),
+    makeEnemy('H4', 'ranged'),
+    makeEnemy('H4', 'ranged'),
 ];
+
+// Shuffle spawn pools and assign new random positions to each enemy — call on every reset
+export function resetEnemies() {
+    for (const room of ['H1', 'H2', 'H3', 'H4']) {
+        const pool        = shuffle([...SPAWN_POOLS[room]]);
+        const roomEnemies = ENEMIES.filter(e => e.room === room);
+        roomEnemies.forEach((enemy, i) => {
+            const p          = pool[i % pool.length];
+            enemy.spawnX     = p.x;
+            enemy.spawnY     = p.y;
+            enemy.patrolAxis = p.axis;
+            enemy.patrolMin  = p.min;
+            enemy.patrolMax  = p.max;
+        });
+    }
+    for (const enemy of ENEMIES) enemy.reset();
+}
