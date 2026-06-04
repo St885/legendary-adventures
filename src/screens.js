@@ -89,7 +89,7 @@ export function drawStart(ctx) {
     // Version
     ctx.fillStyle = 'rgba(100,130,160,0.45)';
     ctx.font      = '11px monospace';
-    ctx.fillText('v1.5 · Legendary Adventures', CANVAS_W / 2, 578);
+    ctx.fillText('v1.5.1 · Legendary Adventures', CANVAS_W / 2, 528);
 
     ctx.textAlign = 'left';
 }
@@ -218,33 +218,33 @@ export function drawWin(ctx, stats = {}, t = 0) {
         ctx.fillStyle = '#c8a0ff';
         ctx.font      = '13px monospace';
         ctx.fillText('Escuchaste la sabiduria del Anciano del Bosque', CANVAS_W / 2, nextY);
-        nextY += 18;
+        nextY += 15;
     }
 
     if (kills >= 10) {
         ctx.fillStyle = '#FFD700';
         ctx.font      = 'bold 13px monospace';
         ctx.fillText('Logro: Cazador legendario', CANVAS_W / 2, nextY);
-        nextY += 15;
+        nextY += 12;
         ctx.fillStyle = '#e8e8e8';
         ctx.font      = '12px monospace';
         ctx.fillText('Derrotaste a todas las criaturas del bosque.', CANVAS_W / 2, nextY);
-        nextY += 18;
+        nextY += 15;
     }
 
     if (chestsOpened >= 2) {
         ctx.fillStyle = '#c8a040';
         ctx.font      = 'bold 13px monospace';
         ctx.fillText('Explorador completo', CANVAS_W / 2, nextY);
-        nextY += 15;
+        nextY += 12;
         ctx.fillStyle = '#e8e8e8';
         ctx.font      = '12px monospace';
         ctx.fillText('Abriste todos los cofres del bosque.', CANVAS_W / 2, nextY);
-        nextY += 18;
+        nextY += 15;
     }
 
-    // CTA — at least y=510, pushed down if optional lines need space
-    const ctaY    = Math.max(510, nextY + 14);
+    // CTA — at least y=480, pushed down if optional lines need space
+    const ctaY    = Math.max(480, nextY + 8);
     ctx.fillStyle = '#ffffff';
     ctx.font      = 'bold 20px monospace';
     ctx.fillText('Presiona R para jugar de nuevo', CANVAS_W / 2, ctaY);
@@ -252,7 +252,7 @@ export function drawWin(ctx, stats = {}, t = 0) {
     // Footer
     ctx.fillStyle = 'rgba(200,200,200,0.35)';
     ctx.font      = '12px monospace';
-    ctx.fillText('v1.5 · Legendary Adventures', CANVAS_W / 2, Math.max(572, ctaY + 28));
+    ctx.fillText('v1.5.1 · Legendary Adventures', CANVAS_W / 2, Math.max(524, ctaY + 16));
 
     ctx.textAlign = 'left';
 }
@@ -332,7 +332,7 @@ export function drawDead(ctx, stats = {}) {
     // Footer
     ctx.fillStyle = 'rgba(200,200,200,0.35)';
     ctx.font      = '12px monospace';
-    ctx.fillText('v1.5 · Legendary Adventures', CANVAS_W / 2, 572);
+    ctx.fillText('v1.5.1 · Legendary Adventures', CANVAS_W / 2, 528);
 
     ctx.textAlign = 'left';
 }

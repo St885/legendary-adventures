@@ -2,7 +2,7 @@ import { game } from './game.js';
 import { overlaps } from './collision.js';
 
 export const door = {
-    x: 340, y: 230, w: 120, h: 160,
+    x: 420, y: 190, w: 120, h: 160,
 
     get isOpen() { return game.crystalsCollected >= 3; },
 

@@ -241,8 +241,8 @@ function makePickup(id, room, cx, cy) {
 // Escudo en H3 — recompensa explorar la habitación más difícil
 // Bastón en H3 — zona superior, lejos de escudo y corazón
 // Corazón en H3 — curación única, solo si HP < máximo
-export const swordPickup  = makePickup('sword',  'H1', 500, 300);
-export const bowPickup    = makePickup('bow',    'H2', 220, 300);
-export const staffPickup  = makePickup('staff',  'H3', 480, 270);
-export const shieldPickup = makePickup('shield', 'H3', 430, 380);
-export const heartPickup  = makePickup('heart',  'H3', 400, 310);
+export const swordPickup  = makePickup('sword',  'H1', 600, 270);
+export const bowPickup    = makePickup('bow',    'H2', 264, 270);
+export const staffPickup  = makePickup('staff',  'H3', 576, 243);
+export const shieldPickup = makePickup('shield', 'H3', 516, 342);
+export const heartPickup  = makePickup('heart',  'H3', 480, 279);

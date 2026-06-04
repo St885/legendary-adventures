@@ -100,5 +100,5 @@ function makeChest(room, cx, cy) {
 }
 
 // H2: curación si HP < máximo  |  H3: efecto visual / atmosférico
-export const chestH2 = makeChest('H2', 560, 300);
-export const chestH3 = makeChest('H3', 130, 290);
+export const chestH2 = makeChest('H2', 672, 270);
+export const chestH3 = makeChest('H3', 156, 261);

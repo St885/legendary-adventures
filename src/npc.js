@@ -4,8 +4,8 @@ const DIALOG_RANGE = 55;
 
 export const npc = {
     room: 'H1',
-    cx: 200,
-    cy: 150,
+    cx: 240,
+    cy: 135,
     _chimed: false,
 
     isNear(player) {

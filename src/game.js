@@ -1,5 +1,5 @@
-export const CANVAS_W = 800;
-export const CANVAS_H = 600;
+export const CANVAS_W = 960;
+export const CANVAS_H = 540;
 
 export const game = {
     state: 'START',

@@ -1,13 +1,6 @@
 import { virtualKeyDown, virtualKeyUp } from './input.js';
-import { CANVAS_W, CANVAS_H } from './game.js';
 
-const CTRL_H           = 120; // portrait touch controls bar height (px)
-const CTRL_H_LANDSCAPE =  80; // landscape touch controls bar height (px)
-
-function _currentCtrlH() {
-    if (!_showControls) return 0;
-    return window.innerWidth > window.innerHeight ? CTRL_H_LANDSCAPE : CTRL_H;
-}
+const CTRL_H = 120; // touch controls bar height — portrait only (px)
 
 let _showControls = false;
 
@@ -19,31 +12,12 @@ function isTouchDevice() {
 
 export function initTouch(canvas) {
     _showControls = isTouchDevice();
-    _setupResize(canvas);
     if (!_showControls) return;
     _buildControls();
     _buildRotateOverlay();
     window.addEventListener('resize',            _checkOrientation);
     window.addEventListener('orientationchange', _checkOrientation);
     _checkOrientation();
-}
-
-// ── Canvas scaling ────────────────────────────────────────────────────────────
-
-function _setupResize(canvas) {
-    function resize() {
-        const ctrlH   = _currentCtrlH();
-        const availW  = window.innerWidth;
-        const availH  = window.innerHeight - ctrlH;
-        // Desktop: never scale above 1× (preserves original 800×600 look)
-        // Mobile:  scale freely to fill the available area
-        const maxScale = _showControls ? Infinity : 1.0;
-        const scale    = Math.min(availW / CANVAS_W, availH / CANVAS_H, maxScale);
-        canvas.style.width  = Math.floor(CANVAS_W * scale) + 'px';
-        canvas.style.height = Math.floor(CANVAS_H * scale) + 'px';
-    }
-    window.addEventListener('resize', resize);
-    resize();
 }
 
 // ── Touch controls bar ────────────────────────────────────────────────────────
@@ -243,5 +217,9 @@ function _checkOrientation() {
     const isPortrait = window.innerHeight > window.innerWidth;
     ov.style.display = isPortrait ? 'flex' : 'none';
     const bar = document.getElementById('touch-controls');
-    if (bar) bar.style.height = (isPortrait ? CTRL_H : CTRL_H_LANDSCAPE) + 'px';
+    if (bar) {
+        // Landscape: bar becomes transparent so canvas fills the full viewport;
+        // controls float visually over the canvas corners.
+        bar.style.background = isPortrait ? 'rgba(0,0,0,0.52)' : 'transparent';
+    }
 }
