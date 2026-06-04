@@ -1,7 +1,13 @@
 import { virtualKeyDown, virtualKeyUp } from './input.js';
 import { CANVAS_W, CANVAS_H } from './game.js';
 
-const CTRL_H = 120; // height reserved for touch controls bar (px)
+const CTRL_H           = 120; // portrait touch controls bar height (px)
+const CTRL_H_LANDSCAPE =  80; // landscape touch controls bar height (px)
+
+function _currentCtrlH() {
+    if (!_showControls) return 0;
+    return window.innerWidth > window.innerHeight ? CTRL_H_LANDSCAPE : CTRL_H;
+}
 
 let _showControls = false;
 
@@ -26,7 +32,7 @@ export function initTouch(canvas) {
 
 function _setupResize(canvas) {
     function resize() {
-        const ctrlH   = _showControls ? CTRL_H : 0;
+        const ctrlH   = _currentCtrlH();
         const availW  = window.innerWidth;
         const availH  = window.innerHeight - ctrlH;
         // Desktop: never scale above 1× (preserves original 800×600 look)
@@ -234,5 +240,8 @@ function _buildRotateOverlay() {
 function _checkOrientation() {
     const ov = document.getElementById('rotate-overlay');
     if (!ov) return;
-    ov.style.display = (window.innerHeight > window.innerWidth) ? 'flex' : 'none';
+    const isPortrait = window.innerHeight > window.innerWidth;
+    ov.style.display = isPortrait ? 'flex' : 'none';
+    const bar = document.getElementById('touch-controls');
+    if (bar) bar.style.height = (isPortrait ? CTRL_H : CTRL_H_LANDSCAPE) + 'px';
 }
