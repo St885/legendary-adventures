@@ -1,6 +1,54 @@
 import { game, CANVAS_W, CANVAS_H } from './game.js';
 import { player } from './player.js';
 
+export function drawBossBar(ctx, boss) {
+    if (!boss.alive) return;
+    const t     = performance.now() / 1000;
+    const pulse = 0.5 + Math.sin(t * 3) * 0.3;
+    const cx    = CANVAS_W / 2;
+    const by    = 8;
+    const barW  = 140;
+    const bx    = cx + 8;
+
+    // Background
+    ctx.fillStyle = 'rgba(0,0,0,0.68)';
+    ctx.fillRect(cx - 120, by - 2, 240, 24);
+
+    // Label
+    ctx.fillStyle = '#FFD700';
+    ctx.font      = 'bold 10px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText('GUARDIAN', cx + 4, by + 14);
+
+    // Bar background
+    ctx.fillStyle = 'rgba(50,15,0,0.9)';
+    ctx.fillRect(bx, by + 3, barW, 13);
+
+    // Bar fill
+    const fillW = Math.max(0, Math.round(barW * boss.hp / boss.maxHp));
+    ctx.fillStyle = `rgba(255,${Math.round(70 + pulse * 60)},0,0.95)`;
+    ctx.fillRect(bx, by + 3, fillW, 13);
+
+    // Segment dividers (one per HP point)
+    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+    ctx.lineWidth   = 1;
+    const segW = barW / boss.maxHp;
+    for (let i = 1; i < boss.maxHp; i++) {
+        const sx = bx + Math.round(i * segW);
+        ctx.beginPath();
+        ctx.moveTo(sx, by + 3);
+        ctx.lineTo(sx, by + 16);
+        ctx.stroke();
+    }
+
+    // Bar border
+    ctx.strokeStyle = `rgba(255,180,0,${0.55 + pulse * 0.3})`;
+    ctx.strokeRect(bx, by + 3, barW, 13);
+    ctx.lineWidth = 1;
+
+    ctx.textAlign = 'left';
+}
+
 export function drawHUD(ctx, { chestsOpened = 0 } = {}) {
     _drawHealth(ctx);
     _drawItems(ctx);

@@ -7,6 +7,7 @@ export const game = {
     crystalsCollected: 0,
     collectedIds: new Set(),
     enemiesKilled: 0,
+    bossDefeated: false,
     transitioning: false,
     fadeAlpha: 0,
     fadeTarget: null,
@@ -25,6 +26,7 @@ export function resetGame() {
     game.crystalsCollected = 0;
     game.collectedIds = new Set();
     game.enemiesKilled = 0;
+    game.bossDefeated = false;
     game.transitioning = false;
     game.fadeAlpha = 0;
     game.fadeTarget = null;

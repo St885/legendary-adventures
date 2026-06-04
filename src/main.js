@@ -9,7 +9,9 @@ import { door } from './door.js';
 import { ENEMIES, resetEnemies } from './enemy.js';
 import { swordPickup, bowPickup, staffPickup, shieldPickup, heartPickup } from './pickup.js';
 import { fireProjectile, getProjectiles, updateProjectiles, drawProjectiles, resetProjectiles,
-         fireEnemyProjectile, getEnemyProjectiles, updateEnemyProjectiles, drawEnemyProjectiles, resetEnemyProjectiles } from './projectile.js';
+         fireEnemyProjectile, getEnemyProjectiles, updateEnemyProjectiles, drawEnemyProjectiles, resetEnemyProjectiles,
+         fireBossProjectile, getBossProjectiles, updateBossProjectiles, drawBossProjectiles, resetBossProjectiles } from './projectile.js';
+import { boss } from './boss.js';
 import { npc } from './npc.js';
 import { overlaps } from './collision.js';
 import { emitGem, emitDeath, emitDoorOpen, emitChest, updateParticles, drawParticles, resetParticles } from './particles.js';
@@ -56,6 +58,46 @@ function getDropPos(player, obstacles) {
     };
 }
 
+function drawBossBar(ctx, boss) {
+    if (!boss || !boss.alive) return;
+    const maxHp = boss.maxHp || 8;
+    const hp    = Math.max(0, boss.hp || 0);
+    const x = Math.round(CANVAS_W / 2 - 120);
+    const y = 8;
+    const w = 240;
+    const h = 18;
+    const pct = hp / maxHp;
+    const segW = w / maxHp;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillRect(x - 60, y - 2, w + 70, h + 4);
+
+    ctx.fillStyle = 'rgba(50,15,0,0.9)';
+    ctx.fillRect(x, y, w, h);
+
+    ctx.fillStyle = 'rgba(200,60,0,0.9)';
+    ctx.fillRect(x, y, Math.round(w * pct), h);
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < maxHp; i++) {
+        const sx = x + Math.round(i * segW);
+        ctx.beginPath(); ctx.moveTo(sx, y); ctx.lineTo(sx, y + h); ctx.stroke();
+    }
+
+    ctx.strokeStyle = 'rgba(255,180,0,0.7)';
+    ctx.strokeRect(x, y, w, h);
+
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText('GUARDIAN', x - 4, y + 13);
+    ctx.textAlign = 'left';
+    ctx.lineWidth = 1;
+    ctx.restore();
+}
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -90,6 +132,8 @@ function handleReset() {
     resetEnemyProjectiles();
     chestH2.reset();
     chestH3.reset();
+    boss.reset();
+    resetBossProjectiles();
     doorWasOpen = false;
     paused = false;
     winTimer = 0;
@@ -135,7 +179,6 @@ function update(dt) {
         return;
     }
 
-    // Pause toggle — only when PLAYING and not transitioning
     if (game.state === 'PLAYING' && isPressed('KeyP')) paused = !paused;
     if (paused && game.state === 'PLAYING') { clearPressed(); return; }
 
@@ -164,8 +207,14 @@ function update(dt) {
         const room = ROOMS[game.currentRoom];
         const obstacles = [...room.obstacles];
         if (game.currentRoom === 'H4') {
+            if (game.crystalsCollected >= 3 && !boss.alive && !game.bossDefeated) boss.spawn();
             const doorObs = door.toObstacle();
             if (doorObs) obstacles.push(doorObs);
+            // Boss moves against current obstacles (not itself)
+            if (boss.alive) boss.update(dt, obstacles, player);
+            // Add boss as obstacle for player after boss has moved
+            const bossObs = boss.toObstacle();
+            if (bossObs) obstacles.push(bossObs);
         }
         player.update(dt, obstacles, room.exits);
 
@@ -188,8 +237,22 @@ function update(dt) {
             enemy.shootCooldown = 3.0;
         }
 
+        // Boss attacks: ranged shot (20s cooldown) and melee (1.5s cooldown)
+        if (boss.alive && game.currentRoom === 'H4') {
+            const shootDir = boss.tryShoot(player);
+            if (shootDir) {
+                fireBossProjectile(boss.cx, boss.cy, shootDir.dx, shootDir.dy);
+                playEnemyShoot();
+            }
+            if (boss.tryMelee(player)) {
+                if (!player.invincible) playHurt();
+                player.takeDamage();
+            }
+        }
+
         updateProjectiles(dt, obstacles);
         updateEnemyProjectiles(dt, obstacles);
+        updateBossProjectiles(dt, obstacles);
 
         // Projectiles hit enemies
         for (const proj of getProjectiles()) {
@@ -207,8 +270,34 @@ function update(dt) {
             }
         }
 
+        // Player projectiles hit boss
+        if (boss.alive && game.currentRoom === 'H4') {
+            for (const proj of getProjectiles()) {
+                if (!proj.alive) continue;
+                if (overlaps(proj, boss)) {
+                    proj.alive = false;
+                    if (boss.takeDamage(proj.damage)) {
+                        game.bossDefeated = true;
+                        game.enemiesKilled++;
+                        emitDeath(boss.cx, boss.cy);
+                        playEnemyDeath();
+                    }
+                }
+            }
+        }
+
         // Enemy projectiles hit Oliver
         for (const proj of getEnemyProjectiles()) {
+            if (proj.alive && overlaps(proj, player)) {
+                proj.alive = false;
+                if (!player.invincible) playHurt();
+                player.takeDamage();
+                break;
+            }
+        }
+
+        // Boss projectiles hit Oliver
+        for (const proj of getBossProjectiles()) {
             if (proj.alive && overlaps(proj, player)) {
                 proj.alive = false;
                 if (!player.invincible) playHurt();
@@ -230,9 +319,18 @@ function update(dt) {
                     }
                 }
             }
+            // Sword hits boss
+            if (boss.alive && game.currentRoom === 'H4' && overlaps(hitbox, boss)) {
+                if (boss.takeDamage(1)) {
+                    game.bossDefeated = true;
+                    game.enemiesKilled++;
+                    emitDeath(boss.cx, boss.cy);
+                    playEnemyDeath();
+                }
+            }
         }
 
-        // Enemies hit player — only one contact per frame to avoid multi-stack damage
+        // Enemies hit player
         for (const enemy of roomEnemies) {
             if (enemy.alive && overlaps(enemy, player)) {
                 if (!player.invincible) playHurt();
@@ -241,19 +339,16 @@ function update(dt) {
             }
         }
 
-        // Skip pickups/crystals/door if player just died
         if (game.state !== 'PLAYING') {
             stopAmbient();
             clearPressed();
             return;
         }
 
-        // Weapon drop cooldown timers
         if (swordPickup.dropCooldown > 0) swordPickup.dropCooldown -= dt;
         if (bowPickup.dropCooldown   > 0) bowPickup.dropCooldown   -= dt;
         if (staffPickup.dropCooldown > 0) staffPickup.dropCooldown -= dt;
 
-        // Weapon pickups — one active weapon; previous drops near Oliver on swap
         if (swordPickup.room === game.currentRoom && !swordPickup.collected && swordPickup.dropCooldown <= 0 && player.weapon !== 'sword' && overlaps(player, swordPickup.aabb)) {
             if (player.weapon !== null) {
                 const pos = getDropPos(player, obstacles);
@@ -279,7 +374,6 @@ function update(dt) {
             player.weapon = 'staff';
         }
 
-        // Shield
         if (shieldPickup.room === game.currentRoom && shieldPickup.checkPickup(player)) {
             player.hasShield = true;
         }
@@ -288,7 +382,6 @@ function update(dt) {
             playHeal();
         }
 
-        // Chests
         if (chestH2.room === game.currentRoom && chestH2.checkOpen(player)) {
             emitChest(chestH2.cx, chestH2.cy - 12, '#ffb0b0');
             playChestOpen();
@@ -299,18 +392,15 @@ function update(dt) {
             playChestOpen();
         }
 
-        // NPC chime — once per run on first proximity
         if (npc.room === game.currentRoom && !npc._chimed && npc.isNear(player)) {
             npc._chimed = true;
             playNpc();
         }
 
-        // Crystals
         for (const c of crystals) {
             if (c.room === game.currentRoom && c.checkCollect(player)) { emitGem(c.cx, c.cy); playGem(); }
         }
 
-        // Door victory
         if (game.currentRoom === 'H4') {
             if (door.isOpen && !doorWasOpen) {
                 doorWasOpen = true;
@@ -340,37 +430,34 @@ function render() {
 
     drawRoom(ctx, game.currentRoom);
 
-    // Pickups
     if (swordPickup.room  === game.currentRoom) swordPickup.draw(ctx);
     if (bowPickup.room    === game.currentRoom) bowPickup.draw(ctx);
     if (staffPickup.room  === game.currentRoom) staffPickup.draw(ctx);
     if (shieldPickup.room === game.currentRoom) shieldPickup.draw(ctx);
     if (heartPickup.room  === game.currentRoom) heartPickup.draw(ctx, player.hp < player.maxHp);
 
-    // Chests
     if (chestH2.room === game.currentRoom) chestH2.draw(ctx);
     if (chestH3.room === game.currentRoom) chestH3.draw(ctx);
 
-    // NPC
     if (npc.room === game.currentRoom) npc.draw(ctx);
 
-    // Crystals
     for (const c of crystals) {
         if (c.room === game.currentRoom) c.draw(ctx);
     }
 
-    // Door
-    if (game.currentRoom === 'H4') door.draw(ctx);
+    if (game.currentRoom === 'H4') {
+        door.draw(ctx);
+        boss.draw(ctx);
+    }
 
-    // Enemies
     for (const enemy of ENEMIES) {
         if (enemy.room === game.currentRoom) enemy.draw(ctx);
     }
 
     drawProjectiles(ctx);
     drawEnemyProjectiles(ctx);
+    drawBossProjectiles(ctx);
 
-    // Player (sword drawn first so it appears behind Oliver's body)
     player.drawSword(ctx);
     player.draw(ctx);
 
@@ -378,6 +465,21 @@ function render() {
     if (npc.room === game.currentRoom && npc.isNear(player)) npc.drawDialog(ctx);
     const chestsOpened = (chestH2.open ? 1 : 0) + (chestH3.open ? 1 : 0);
     drawHUD(ctx, { chestsOpened });
+
+    if (game.currentRoom === 'H4') {
+        drawBossBar(ctx, boss);
+        if (boss.alive && game.crystalsCollected >= 3 && roomNameTimer <= 0) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.52)';
+            ctx.fillRect(CANVAS_W / 2 - 218, 34, 436, 22);
+            ctx.fillStyle = '#FFD700';
+            ctx.font      = '12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('Derrota al Guardian para abrir el Santuario', CANVAS_W / 2, 49);
+            ctx.textAlign = 'left';
+            ctx.restore();
+        }
+    }
 
     if (roomNameTimer > 0) {
         const alpha = Math.min(1, roomNameTimer / 0.6);

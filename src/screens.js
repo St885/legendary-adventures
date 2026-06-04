@@ -160,12 +160,17 @@ export function drawWin(ctx, stats = {}, t = 0) {
     ctx.fillStyle = '#ffaa44';
     ctx.fillText('Enemigos derrotados: ' + kills   + ' / 10', CANVAS_W / 2, 330);
 
+    // Guardian defeated line
+    ctx.fillStyle = '#FFD700';
+    ctx.font      = 'bold 13px monospace';
+    ctx.fillText('El Guardian del Santuario ha caido', CANVAS_W / 2, 348);
+
     // Second separator
     ctx.strokeStyle = 'rgba(255,215,0,0.3)';
     ctx.lineWidth   = 1;
     ctx.beginPath();
-    ctx.moveTo(CANVAS_W / 2 - 210, 352);
-    ctx.lineTo(CANVAS_W / 2 + 210, 352);
+    ctx.moveTo(CANVAS_W / 2 - 210, 360);
+    ctx.lineTo(CANVAS_W / 2 + 210, 360);
     ctx.stroke();
 
     // Three gem decorations (no save/rotate — use fillRect directly)

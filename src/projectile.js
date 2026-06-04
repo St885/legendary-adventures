@@ -54,16 +54,15 @@ export function drawProjectiles(ctx) {
             ctx.translate(cx, cy);
             ctx.rotate(Math.atan2(p.vy, p.vx));
             ctx.fillStyle = '#886640';
-            ctx.fillRect(-9, -2,  4,  5);   // fletching
+            ctx.fillRect(-9, -2,  4,  5);
             ctx.fillStyle = '#c8a040';
-            ctx.fillRect(-5, -1, 14,  3);   // shaft
+            ctx.fillRect(-5, -1, 14,  3);
             ctx.fillStyle = '#e8e8c0';
-            ctx.fillRect( 9, -2,  4,  5);   // tip
+            ctx.fillRect( 9, -2,  4,  5);
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            ctx.fillRect(-4, -1, 10,  1);   // highlight
+            ctx.fillRect(-4, -1, 10,  1);
             ctx.restore();
         } else {
-            // Magic bolt
             ctx.shadowColor = '#a060ff';
             ctx.shadowBlur  = 12;
             ctx.fillStyle   = '#c080ff';
@@ -84,7 +83,7 @@ export function resetProjectiles() {
     _pool.length = 0;
 }
 
-// ── Enemy projectiles ──────────────────────────────────────────────────────────
+// Enemy projectiles
 
 const _enemyPool = [];
 
@@ -140,4 +139,62 @@ export function drawEnemyProjectiles(ctx) {
 
 export function resetEnemyProjectiles() {
     _enemyPool.length = 0;
+}
+
+// Boss projectiles
+
+const _bossPool = [];
+
+export function fireBossProjectile(cx, cy, dx, dy) {
+    const size = 14;
+    _bossPool.push({
+        x: cx - size / 2, y: cy - size / 2,
+        vx: dx * 130, vy: dy * 130,
+        w: size, h: size,
+        alive: true,
+    });
+}
+
+export function getBossProjectiles() { return _bossPool; }
+
+export function updateBossProjectiles(dt, obstacles) {
+    for (let i = _bossPool.length - 1; i >= 0; i--) {
+        const p = _bossPool[i];
+        if (!p.alive) { _bossPool.splice(i, 1); continue; }
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.x + p.w < 0 || p.x > CANVAS_W || p.y + p.h < 0 || p.y > CANVAS_H) {
+            _bossPool.splice(i, 1);
+            continue;
+        }
+        let hitObs = false;
+        for (const obs of obstacles) {
+            if (overlaps(p, obs)) { hitObs = true; break; }
+        }
+        if (hitObs) _bossPool.splice(i, 1);
+    }
+}
+
+export function drawBossProjectiles(ctx) {
+    for (const p of _bossPool) {
+        if (!p.alive) continue;
+        const cx = p.x + p.w / 2;
+        const cy = p.y + p.h / 2;
+        ctx.shadowColor = '#FFD700';
+        ctx.shadowBlur  = 16;
+        ctx.fillStyle   = '#FFA020';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 6;
+        ctx.fillStyle  = 'rgba(255,255,200,0.85)';
+        ctx.beginPath();
+        ctx.arc(cx - 2, cy - 2, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+}
+
+export function resetBossProjectiles() {
+    _bossPool.length = 0;
 }

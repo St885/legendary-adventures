@@ -4,20 +4,18 @@ import { overlaps } from './collision.js';
 export const door = {
     x: 420, y: 190, w: 120, h: 160,
 
-    get isOpen() { return game.crystalsCollected >= 3; },
+    get isOpen() { return game.crystalsCollected >= 3 && game.bossDefeated; },
 
     draw(ctx) {
         if (this.isOpen) {
             const t = performance.now() / 1000;
             const pulse = 0.5 + Math.sin(t * 1.8) * 0.4;
 
-            // Animated interior glow
             ctx.fillStyle = `rgba(255,215,0,${0.07 + pulse * 0.10})`;
             ctx.fillRect(this.x, this.y, this.w, this.h);
             ctx.fillStyle = `rgba(255,255,200,${0.04 + pulse * 0.05})`;
             ctx.fillRect(this.x + 14, this.y + 14, this.w - 28, this.h - 28);
 
-            // Frame pillars + stroke with pulsing glow
             ctx.shadowColor = '#FFD700';
             ctx.shadowBlur = 10 + pulse * 16;
             ctx.fillStyle = '#c8960a';
@@ -33,7 +31,6 @@ export const door = {
             ctx.shadowBlur = 0;
             ctx.lineWidth = 1;
 
-            // Rotating cross emblem
             const ex = this.x + this.w / 2;
             const ey = this.y + this.h / 2;
             ctx.save();
@@ -51,7 +48,6 @@ export const door = {
             ctx.shadowBlur = 0;
             ctx.restore();
 
-            // Center jewel
             ctx.save();
             ctx.translate(ex, ey);
             ctx.shadowColor = '#FFFFFF';
@@ -67,20 +63,16 @@ export const door = {
             ctx.shadowBlur = 0;
             ctx.restore();
         } else {
-            // Locked stone door
             ctx.fillStyle = '#302410';
             ctx.fillRect(this.x, this.y, this.w, this.h);
             ctx.strokeStyle = '#5a4a20';
             ctx.lineWidth = 3;
             ctx.strokeRect(this.x, this.y, this.w, this.h);
             ctx.lineWidth = 1;
-            // Door handle
             ctx.fillStyle = '#5a4520';
             ctx.fillRect(this.x + 53, this.y + 90, 14, 30);
-            // Padlock body
             ctx.fillStyle = '#7a6030';
             ctx.fillRect(this.x + 50, this.y + 64, 20, 16);
-            // Padlock shackle
             ctx.strokeStyle = '#9a7840';
             ctx.lineWidth = 3;
             ctx.beginPath();
