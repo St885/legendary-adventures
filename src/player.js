@@ -24,6 +24,10 @@ export const player = {
     attackTimer: 0,
     attackCooldown: 0,
 
+    walkTimer: 0,
+    walkFrame: 0,
+    moving: false,
+
     get shieldActive() {
         return this.hasShield && this.shieldCooldown <= 0;
     },
@@ -53,6 +57,16 @@ export const player = {
         this.y += vy * dt;
         for (const obs of obstacles) resolveY(this, obs);
         clampToBounds(this, 0, 0, CANVAS_W, CANVAS_H);
+
+        const isMoving = vx !== 0 || vy !== 0;
+        this.moving = isMoving;
+        if (isMoving) {
+            this.walkTimer += dt;
+            if (this.walkTimer >= 0.16) { this.walkTimer = 0; this.walkFrame ^= 1; }
+        } else {
+            this.walkFrame = 0;
+            this.walkTimer = 0;
+        }
 
         for (const exit of exits) {
             if (overlaps(this, exit.zone)) {
@@ -101,54 +115,184 @@ export const player = {
     draw(ctx) {
         if (this.invincible && Math.floor(this.invincTimer * 10) % 2 === 0) return;
 
-        const x = this.x, y = this.y;
+        const x  = Math.round(this.x);
+        const y  = Math.round(this.y);
+        const f  = this.facing;
+        const la = this.walkFrame;   // 0 or 1
 
-        // Cape behind body
-        ctx.fillStyle = '#173d6a';
-        ctx.fillRect(x,      y + 10, 7, 17);
-        ctx.fillRect(x + 17, y + 10, 7, 17);
-        ctx.fillStyle = '#0f2a4a';
-        ctx.fillRect(x,      y + 10, 2, 17);
-        ctx.fillRect(x + 22, y + 10, 2, 17);
+        const SK  = '#d4946a', SKD = '#b07040';
+        const HR  = '#2a1505', HRL = '#4a2a10';
+        const TN  = '#2a7a3a', TNL = '#3a9a4a', TND = '#1a5228';
+        const CP  = '#1a3d7a', CPD = '#0f2650';
+        const BL  = '#6b3a18';
+        const LG  = '#1e5228', BT  = '#2a1a08';
+        const EY  = '#1a0800';
 
-        // Body — tunic
-        ctx.fillStyle = '#3a8a4a';
-        ctx.fillRect(x + 5, y + 10, 14, 16);
-        ctx.fillStyle = 'rgba(255,255,255,0.10)';
-        ctx.fillRect(x + 6, y + 11, 4, 8);
+        if (f === 'down') {
+            // Cape sides (drawn first — behind body)
+            ctx.fillStyle = CPD;
+            ctx.fillRect(x,      y + 13, 5, 19);
+            ctx.fillRect(x + 19, y + 13, 5, 19);
+            ctx.fillStyle = CP;
+            ctx.fillRect(x + 1,  y + 14, 4, 17);
+            ctx.fillRect(x + 19, y + 14, 4, 17);
+            // Neck
+            ctx.fillStyle = SK;
+            ctx.fillRect(x + 9, y + 13, 6, 3);
+            // Tunic
+            ctx.fillStyle = TN;
+            ctx.fillRect(x + 3, y + 16, 18, 11);
+            ctx.fillStyle = TNL;
+            ctx.fillRect(x + 5, y + 17,  5,  8);
+            ctx.fillStyle = TND;
+            ctx.fillRect(x + 16, y + 17, 4,  8);
+            // Belt + buckle
+            ctx.fillStyle = BL;
+            ctx.fillRect(x + 3, y + 27, 18, 3);
+            ctx.fillStyle = '#c09030';
+            ctx.fillRect(x + 10, y + 27, 4, 3);
+            // Legs (walk alternation)
+            ctx.fillStyle = LG;
+            ctx.fillRect(x + 4,  y + 28 - la, 7, 3);
+            ctx.fillRect(x + 13, y + 28 + la, 7, 3);
+            ctx.fillStyle = BT;
+            ctx.fillRect(x + 4,  y + 30, 7, 2);
+            ctx.fillRect(x + 13, y + 30, 7, 2);
+            // Head (drawn on top)
+            ctx.fillStyle = SK;
+            ctx.fillRect(x + 5, y + 3, 14, 11);
+            ctx.fillRect(x + 4, y + 5,  2,  6);   // ears
+            ctx.fillRect(x + 18, y + 5, 2,  6);
+            ctx.fillStyle = SKD;
+            ctx.fillRect(x + 5, y + 12, 14, 2);
+            // Hair
+            ctx.fillStyle = HR;
+            ctx.fillRect(x + 5, y,      14, 5);
+            ctx.fillRect(x + 3, y + 2,   3, 4);
+            ctx.fillRect(x + 18, y + 2,  3, 4);
+            ctx.fillStyle = HRL;
+            ctx.fillRect(x + 8, y + 1,   5, 2);
+            // Eyes + shine
+            ctx.fillStyle = EY;
+            ctx.fillRect(x + 8,  y + 7, 2, 2);
+            ctx.fillRect(x + 14, y + 7, 2, 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.fillRect(x + 8,  y + 7, 1, 1);
+            ctx.fillRect(x + 14, y + 7, 1, 1);
 
-        // Belt
-        ctx.fillStyle = '#5c3a1e';
-        ctx.fillRect(x + 5, y + 22, 14, 3);
+        } else if (f === 'up') {
+            // Cape (full back — most prominent in this view)
+            ctx.fillStyle = CPD;
+            ctx.fillRect(x + 1, y + 13, 22, 19);
+            ctx.fillStyle = CP;
+            ctx.fillRect(x + 2, y + 14, 20, 17);
+            ctx.fillStyle = 'rgba(80,130,220,0.18)';
+            ctx.fillRect(x + 4, y + 15,  7, 14);
+            // Tunic back
+            ctx.fillStyle = TND;
+            ctx.fillRect(x + 3, y + 16, 18, 11);
+            // Belt
+            ctx.fillStyle = BL;
+            ctx.fillRect(x + 3, y + 27, 18, 3);
+            // Legs
+            ctx.fillStyle = LG;
+            ctx.fillRect(x + 4,  y + 28 - la, 7, 3);
+            ctx.fillRect(x + 13, y + 28 + la, 7, 3);
+            ctx.fillStyle = BT;
+            ctx.fillRect(x + 4,  y + 30, 7, 2);
+            ctx.fillRect(x + 13, y + 30, 7, 2);
+            // Back of head — hair only, no face
+            ctx.fillStyle = HR;
+            ctx.fillRect(x + 5, y,     14, 14);
+            ctx.fillStyle = HRL;
+            ctx.fillRect(x + 8, y + 2,  6,  5);
 
-        // Legs + boots
-        ctx.fillStyle = '#2a6035';
-        ctx.fillRect(x + 6,  y + 25, 5, 7);
-        ctx.fillRect(x + 13, y + 25, 5, 7);
-        ctx.fillStyle = '#3a2810';
-        ctx.fillRect(x + 6,  y + 30, 5, 2);
-        ctx.fillRect(x + 13, y + 30, 5, 2);
+        } else if (f === 'right') {
+            // Cape left side (trailing)
+            ctx.fillStyle = CPD;
+            ctx.fillRect(x, y + 13, 6, 19);
+            ctx.fillStyle = CP;
+            ctx.fillRect(x + 1, y + 14, 5, 17);
+            // Tunic
+            ctx.fillStyle = TN;
+            ctx.fillRect(x + 4, y + 16, 15, 11);
+            ctx.fillStyle = TNL;
+            ctx.fillRect(x + 5, y + 17,  5,  8);
+            ctx.fillStyle = TND;
+            ctx.fillRect(x + 15, y + 17, 3,  8);
+            // Belt
+            ctx.fillStyle = BL;
+            ctx.fillRect(x + 4, y + 27, 15, 3);
+            // Neck
+            ctx.fillStyle = SK;
+            ctx.fillRect(x + 8, y + 13, 7, 4);
+            // Legs — side stride (front leg shifts forward)
+            const sx = la * 2;
+            ctx.fillStyle = LG;
+            ctx.fillRect(x + 5 + sx, y + 28, 7, 3);
+            ctx.fillRect(x + 5,      y + 29, 7, 2);
+            ctx.fillStyle = BT;
+            ctx.fillRect(x + 5 + sx, y + 30, 8, 2);
+            ctx.fillRect(x + 4,      y + 30, 7, 2);
+            // Head profile (right)
+            ctx.fillStyle = SK;
+            ctx.fillRect(x + 7, y + 3, 12, 11);
+            ctx.fillRect(x + 18, y + 7, 2,  4);   // chin/nose
+            ctx.fillStyle = SKD;
+            ctx.fillRect(x + 7, y + 12, 12, 2);
+            // Hair
+            ctx.fillStyle = HR;
+            ctx.fillRect(x + 7, y,      12, 5);
+            ctx.fillRect(x + 4, y + 1,   4, 7);
+            // Eye
+            ctx.fillStyle = EY;
+            ctx.fillRect(x + 16, y + 7, 2, 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.fillRect(x + 16, y + 7, 1, 1);
 
-        // Head — flesh
-        ctx.fillStyle = '#c8845a';
-        ctx.fillRect(x + 6, y + 2, 12, 10);
-
-        // Hair
-        ctx.fillStyle = '#3a2010';
-        ctx.fillRect(x + 6, y,     12, 4);
-        ctx.fillRect(x + 4, y + 2,  3, 4);
-
-        // Eyes — direction-aware
-        ctx.fillStyle = '#1a0a00';
-        if (this.facing === 'down') {
-            ctx.fillRect(x + 9,  y + 6, 2, 2);
-            ctx.fillRect(x + 13, y + 6, 2, 2);
-        } else if (this.facing === 'right') {
-            ctx.fillRect(x + 14, y + 6, 2, 2);
-        } else if (this.facing === 'left') {
-            ctx.fillRect(x + 8,  y + 6, 2, 2);
+        } else { // left
+            // Cape right side (trailing)
+            ctx.fillStyle = CPD;
+            ctx.fillRect(x + 18, y + 13, 6, 19);
+            ctx.fillStyle = CP;
+            ctx.fillRect(x + 18, y + 14, 5, 17);
+            // Tunic
+            ctx.fillStyle = TN;
+            ctx.fillRect(x + 5, y + 16, 15, 11);
+            ctx.fillStyle = TNL;
+            ctx.fillRect(x + 6, y + 17,  5,  8);
+            ctx.fillStyle = TND;
+            ctx.fillRect(x + 16, y + 17, 3,  8);
+            // Belt
+            ctx.fillStyle = BL;
+            ctx.fillRect(x + 5, y + 27, 15, 3);
+            // Neck
+            ctx.fillStyle = SK;
+            ctx.fillRect(x + 9, y + 13, 7, 4);
+            // Legs — side stride mirrored
+            const sx2 = la * 2;
+            ctx.fillStyle = LG;
+            ctx.fillRect(x + 12 - sx2, y + 28, 7, 3);
+            ctx.fillRect(x + 12,       y + 29, 7, 2);
+            ctx.fillStyle = BT;
+            ctx.fillRect(x + 11 - sx2, y + 30, 8, 2);
+            ctx.fillRect(x + 13,       y + 30, 7, 2);
+            // Head profile (left)
+            ctx.fillStyle = SK;
+            ctx.fillRect(x + 5, y + 3, 12, 11);
+            ctx.fillRect(x + 4, y + 7,  2,  4);   // chin/nose
+            ctx.fillStyle = SKD;
+            ctx.fillRect(x + 5, y + 12, 12, 2);
+            // Hair
+            ctx.fillStyle = HR;
+            ctx.fillRect(x + 5, y,      12, 5);
+            ctx.fillRect(x + 16, y + 1,  4, 7);
+            // Eye
+            ctx.fillStyle = EY;
+            ctx.fillRect(x + 6, y + 7, 2, 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.fillRect(x + 6, y + 7, 1, 1);
         }
-        // facing 'up' — back of head visible, no eyes
     },
 
     drawSword(ctx) {
@@ -183,6 +327,8 @@ export const player = {
         this.attackCooldown = 0;
         this.invincible = false;
         this.invincTimer = 0;
+        this.walkTimer = 0;
+        this.walkFrame = 0;
     },
 
     // Full reset — called when pressing R
@@ -199,5 +345,8 @@ export const player = {
         this.attacking = false;
         this.attackTimer = 0;
         this.attackCooldown = 0;
+        this.walkTimer = 0;
+        this.walkFrame = 0;
+        this.moving = false;
     },
 };
