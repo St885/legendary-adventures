@@ -14,8 +14,8 @@ import { fireProjectile, getProjectiles, updateProjectiles, drawProjectiles, res
 import { boss } from './boss.js';
 import { npc } from './npc.js';
 import { overlaps } from './collision.js';
-import { emitGem, emitDeath, emitDoorOpen, emitChest, updateParticles, drawParticles, resetParticles } from './particles.js';
-import { initAudio, playGem, playSword, playHurt, playEnemyDeath, playEnemyShoot, playDoorOpen, playHeal, playNpc, playChestOpen, playBowShoot, playStaffShoot, startAmbient, stopAmbient } from './audio.js';
+import { emitGem, emitHit, emitDeath, emitDoorOpen, emitChest, updateParticles, drawParticles, resetParticles } from './particles.js';
+import { initAudio, playGem, playSword, playHurt, playHit, playEnemyDeath, playEnemyShoot, playDoorOpen, playHeal, playNpc, playChestOpen, playBowShoot, playStaffShoot, startAmbient, stopAmbient } from './audio.js';
 import { chestH2, chestH3 } from './chest.js';
 import { initTouch } from './touch.js';
 
@@ -264,6 +264,9 @@ function update(dt) {
                         emitDeath(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
                         playEnemyDeath();
                         game.enemiesKilled++;
+                    } else {
+                        emitHit(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
+                        playHit();
                     }
                     break;
                 }
@@ -281,6 +284,9 @@ function update(dt) {
                         game.enemiesKilled++;
                         emitDeath(boss.cx, boss.cy);
                         playEnemyDeath();
+                    } else {
+                        emitHit(boss.cx, boss.cy);
+                        playHit();
                     }
                 }
             }
@@ -316,6 +322,9 @@ function update(dt) {
                         emitDeath(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
                         playEnemyDeath();
                         game.enemiesKilled++;
+                    } else {
+                        emitHit(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
+                        playHit();
                     }
                 }
             }
@@ -326,6 +335,9 @@ function update(dt) {
                     game.enemiesKilled++;
                     emitDeath(boss.cx, boss.cy);
                     playEnemyDeath();
+                } else {
+                    emitHit(boss.cx, boss.cy);
+                    playHit();
                 }
             }
         }

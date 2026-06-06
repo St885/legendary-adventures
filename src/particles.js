@@ -16,6 +16,22 @@ export function emitGem(x, y) {
     }
 }
 
+export function emitHit(x, y) {
+    for (let i = 0; i < 5; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd   = 55 + Math.random() * 55;
+        _pool.push({
+            x, y,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd - 20,
+            life: 0.10 + Math.random() * 0.10,
+            maxLife: 0.20,
+            size: 2 + Math.random() * 2,
+            color: Math.random() < 0.5 ? '#FFB020' : '#FF6010',
+        });
+    }
+}
+
 export function emitDeath(x, y) {
     for (let i = 0; i < 7; i++) {
         const angle = Math.random() * Math.PI * 2;

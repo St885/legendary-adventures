@@ -19,6 +19,7 @@ export const boss = {
     vy: 0,
     meleeCooldown: 0,
     shootCooldown: 0,
+    hitFlashTimer: 0,
 
     get cx() { return this.x + this.w / 2; },
     get cy() { return this.y + this.h / 2; },
@@ -36,6 +37,7 @@ export const boss = {
         if (!this.alive) return false;
         this.hp = Math.max(0, this.hp - amount);
         if (this.hp <= 0) { this.alive = false; return true; }
+        this.hitFlashTimer = 0.15;
         return false;
     },
 
@@ -67,6 +69,7 @@ export const boss = {
 
         this.meleeCooldown -= dt;
         this.shootCooldown -= dt;
+        if (this.hitFlashTimer > 0) this.hitFlashTimer -= dt;
 
         const pdx  = player.x + player.w / 2 - this.cx;
         const pdy  = player.y + player.h / 2 - this.cy;
@@ -96,6 +99,7 @@ export const boss = {
         this.vy            = 0;
         this.meleeCooldown = 0;
         this.shootCooldown = 0;
+        this.hitFlashTimer = 0;
     },
 
     toObstacle() {
@@ -169,6 +173,11 @@ export const boss = {
         ctx.fillRect(cx -  6, cy - 14,  4,  4);
         ctx.fillRect(cx +  2, cy + 10,  4,  4);
 
+        if (this.hitFlashTimer > 0 && Math.floor(this.hitFlashTimer * 14) % 2 === 0) {
+            ctx.shadowBlur = 0;
+            ctx.fillStyle  = 'rgba(255,255,255,0.52)';
+            ctx.fillRect(bx, by, this.w, this.h);
+        }
         ctx.shadowBlur = 0;
     },
 };

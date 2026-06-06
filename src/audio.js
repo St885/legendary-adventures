@@ -47,6 +47,10 @@ export function playHurt() {
     tone({ freq1: 180, freq2: 60, type: 'sine', dur: 0.28, gain: 0.20 });
 }
 
+export function playHit() {
+    tone({ freq1: 440, freq2: 220, type: 'square', dur: 0.07, gain: 0.09 });
+}
+
 export function playEnemyDeath() {
     tone({ freq1: 380, freq2: 110, type: 'square', dur: 0.22, gain: 0.10 });
 }
